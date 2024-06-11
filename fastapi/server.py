@@ -2,6 +2,7 @@ import io
 import asyncio
 import base64
 import random
+import string
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
@@ -58,8 +59,19 @@ def deploy_model(images):
     return "SAMPLE_UUID"
 
 async def get_bboxes(model_id, pil_image):
-    print("TO BE IMPLEMENTED")
-    return [{"sample": "bbox"}]
+    boxes = []
+    
+    for _ in range(random.randint(1, 5)):
+        boxes.append(Box(
+            cls = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
+            bbox = BBox(
+                w=random.uniform(0, 0.25),
+                h=random.uniform(0, 0.25),
+                x=random.uniform(0.4, 0.6),
+                y=random.uniform(0.4, 0.6)
+            ),
+        ))
+    return boxes
 
 @app.post("/train", responses={200: {"model": TrainResponse}})
 async def train(images: List[Image]):
@@ -91,20 +103,9 @@ async def infer(request: InferenceRequest):
     # You can now access your images with the "images" variable
     # Do something with the images here
     
-    boxes = []
-    import string
-    for _ in range(random.randint(1, 5)):
-        boxes.append(Box(
-            class_ = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
-            bbox = BBox(
-                w=random.uniform(0, 0.25),
-                h=random.uniform(0, 0.25),
-                x=random.uniform(0.4, 0.6),
-                y=random.uniform(0.4, 0.6)
-            ),
-        ))
+    
     
     return {
         "message": "ran inference!",
-        "boxes": boxes
+        "boxes": result
     }
