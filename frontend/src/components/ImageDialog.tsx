@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogTrigger, DialogContent, DialogClose } from './ui/dialog';
-import { Button } from './ui/button';
+import { Dialog, DialogContent } from './ui/dialog';
 
 interface ImageDialogProps {
   imageFile: File;
@@ -37,10 +36,24 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
       img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Calculate scale ratios
+        const scaleX = canvas.width / img.width;
+        const scaleY = canvas.height / img.height;
+
         boxes.forEach(box => {
+          // Adjust box dimensions to canvas scale
+          const scaledBox = {
+            x: box.x * scaleX,
+            y: box.y * scaleY,
+            width: box.width * scaleX,
+            height: box.height * scaleY,
+          };
+
           ctx.strokeStyle = 'red';
-          ctx.strokeRect(box.x, box.y, box.width, box.height);
+          ctx.strokeRect(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height);
         });
+
         imageRef.current = img; // Store the loaded image
       };
       img.src = imageUrl;
@@ -76,8 +89,16 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         ctx.drawImage(imageRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
         boxes.forEach(box => {
+          // Adjust box dimensions to canvas scale
+          const scaledBox = {
+            x: box.x * (canvasRef.current.width / imageRef.current.width),
+            y: box.y * (canvasRef.current.height / imageRef.current.height),
+            width: box.width * (canvasRef.current.width / imageRef.current.width),
+            height: box.height * (canvasRef.current.height / imageRef.current.height),
+          };
+
           ctx.strokeStyle = 'red';
-          ctx.strokeRect(box.x, box.y, box.width, box.height);
+          ctx.strokeRect(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height);
         });
         // Draw the current box
         if (currentBox) {
@@ -89,8 +110,25 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
   };
 
   const handleMouseUp = () => {
-    if (currentBox) {
-      onAddBox(currentBox);
+    if (currentBox && imageRef.current) {
+      const imgWidth = imageRef.current.width;
+      const imgHeight = imageRef.current.height;
+      const canvasWidth = canvasRef.current?.width || 1; // Avoid division by zero
+      const canvasHeight = canvasRef.current?.height || 1;
+
+      // Calculate the scale ratios
+      const scaleX = imgWidth / canvasWidth;
+      const scaleY = imgHeight / canvasHeight;
+
+      // Adjust box dimensions to be relative to the image size
+      const adjustedBox = {
+        x: currentBox.x * scaleX,
+        y: currentBox.y * scaleY,
+        width: currentBox.width * scaleX,
+        height: currentBox.height * scaleY,
+      };
+
+      onAddBox(adjustedBox);
       setCurrentBox(null);
     }
     setIsDrawing(false);

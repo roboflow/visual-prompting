@@ -55,7 +55,7 @@ export default function Home() {
                   </label>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={exampleImages} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} />
+                      <ImageGrid images={exampleImages} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} boxes={exampleBoxes} />
                     </div>
                     <input
                       type="file"
