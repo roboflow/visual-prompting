@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
 from PIL import Image as PILImage
+from model.owlv2 import OurModel
+from uuid import uuid4
 
 app = FastAPI()
 @app.on_event("startup")
@@ -24,6 +26,7 @@ class BBox(BaseModel):
 class Box(BaseModel):
     cls: str
     bbox: BBox
+    confidence: float
 
 class Image(BaseModel):
     image_contents: str
@@ -54,22 +57,24 @@ async def fifo_worker():
         await job()
     
 ## TODO
-def deploy_model(images):
-    print("TO BE IMPLEMENTED")
-    return "SAMPLE_UUID"
+async def deploy_model(images):
+    uuid = str(uuid4())
+    model = OurModel.create(uuid, images.dict())
+    return uuid
 
-async def get_bboxes(model_id, pil_image):
-    boxes = []
-    
-    for _ in range(random.randint(1, 5)):
+async def get_bboxes(model_id, pil_image, confidence):
+    model = OurModel.load(model_id)
+    boxes = model.infer(pil_image, confidence)
+    for box in boxes:
         boxes.append(Box(
-            cls = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)),
+            cls = box["class_name"],
             bbox = BBox(
-                w=random.uniform(0, 0.25),
-                h=random.uniform(0, 0.25),
-                x=random.uniform(0.4, 0.6),
-                y=random.uniform(0.4, 0.6)
+                w=box["w"],
+                h=box["h"],
+                x=box["x"],
+                y=box["y"]
             ),
+            confidence = box["confidence"]
         ))
     return boxes
 
@@ -78,7 +83,16 @@ async def train(images: List[Image]):
     dict_image = [image.dict() for image in images]
     for i in dict_image:
         i["pil_contents"] = to_pil_image(i["contents"])
-    model_id = deploy_model(dict_image)
+
+    future = asyncio.Future()
+    async def task(dict_image=dict_image):
+        # Do something with the images here
+        result = await deploy_model(dict_image)
+        future.set_result(result)
+    
+    await app.fifo_queue.put(task)
+    model_id = await future
+
     # You can now access your images with the "images" variable
     # Do something with the images here
     return {
@@ -92,9 +106,9 @@ async def infer(request: InferenceRequest):
     
     future = asyncio.Future()
     
-    async def task(model_id=request.model_id, pil_image=pil_image):
+    async def task(model_id=request.model_id, pil_image=pil_image, confidence=request.confidence):
         # Do something with the images here
-        result = await get_bboxes(model_id, pil_image)
+        result = await get_bboxes(model_id, pil_image, confidence)
         future.set_result(result)
     
     await app.fifo_queue.put(task)
