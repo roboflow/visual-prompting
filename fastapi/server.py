@@ -77,7 +77,7 @@ async def get_bboxes(model_id, pil_image):
 async def train(images: List[Image]):
     dict_image = [image.dict() for image in images]
     for i in dict_image:
-        i["pil_contents"] = to_pil_image(i["contents"])
+        i["pil_contents"] = to_pil_image(i["image_contents"])
     model_id = deploy_model(dict_image)
     # You can now access your images with the "images" variable
     # Do something with the images here
