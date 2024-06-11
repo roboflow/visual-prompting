@@ -9,9 +9,10 @@ interface ImageDialogProps {
   onClose: () => void;
   boxes: Box[];
   onAddBox: (box: Box) => void;
+  suggestedBoxes: Box[];
 }
 
-const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, boxes, onAddBox }) => {
+const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, boxes, onAddBox, suggestedBoxes }) => {
   const [imageUrl, setImageUrl] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -33,19 +34,18 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
       const scaleY = (canvas?.height || 0) / imageRef.current.height;
 
       boxes.forEach(box => {
-        // Adjust box dimensions to canvas scale
-        const scaledBox = {
-          x: box.x * scaleX,
-          y: box.y * scaleY,
-          width: box.width * scaleX,
-          height: box.height * scaleY,
-        };
-
         ctx.strokeStyle = 'red';
-        ctx.strokeRect(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height);
+        ctx.setLineDash([]);
+        ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+      });
+
+      suggestedBoxes.forEach(box => {
+        ctx.strokeStyle = 'green';
+        ctx.setLineDash([2, 2]);
+        ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
       });
     }
-  }, [boxes, imageRef]);
+  }, [boxes, imageRef, suggestedBoxes]);
 
   useEffect(() => {
     if (imageFile) {
