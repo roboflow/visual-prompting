@@ -3,10 +3,13 @@
 import ImageGrid from "@/components/ImageGrid";
 import { Button } from "@/components/ui/button"
 import { useState } from "react";
+import ImageDialog from "@/components/ImageDialog";
 
 export default function Home() {
   const [exampleImages, setExampleImages] = useState<File[]>([]);
   const [testImages, setTestImages] = useState<File[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isDialogOpen, setDialogOpen] = useState(false);
 
   function handleExampleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -45,7 +48,7 @@ export default function Home() {
                   </label>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={exampleImages} />
+                      <ImageGrid images={exampleImages} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} />
                     </div>
                     <input
                       type="file"
@@ -106,6 +109,7 @@ export default function Home() {
           </section>
         </div>
       </main>
+      {selectedImage && <ImageDialog imageFile={selectedImage} isOpen={isDialogOpen} onClose={() => setDialogOpen(false)} />}
     </div>
   );
 }
