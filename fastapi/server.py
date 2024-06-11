@@ -14,10 +14,10 @@ async def startup_event():
     asyncio.create_task(fifo_worker())
 
 class BBox(BaseModel):
-    w: int
-    h: int
-    x: int
-    y: int
+    w: float
+    h: float
+    x: float
+    y: float
 
 class Box(BaseModel):
     class_: str
