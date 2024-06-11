@@ -109,7 +109,15 @@ export default function Home() {
           </section>
         </div>
       </main>
-      {selectedImage && <ImageDialog imageFile={selectedImage} isOpen={isDialogOpen} onClose={() => setDialogOpen(false)} />}
+      {selectedImage && (
+        <ImageDialog
+          imageFile={selectedImage}
+          isOpen={isDialogOpen}
+          onClose={() => setDialogOpen(false)}
+          boxes={[]} // Assuming you need to pass an empty array if no boxes are defined yet
+          onAddBox={(box) => console.log('Box added:', box)} // Replace with your actual function to handle adding a box
+        />
+      )}
     </div>
   );
 }
