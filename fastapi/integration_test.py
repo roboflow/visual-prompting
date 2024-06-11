@@ -1,5 +1,6 @@
 import requests
 import base64
+from PIL import Image, ImageDraw
 
 def test_train():
     # do it on golden dog
@@ -31,7 +32,22 @@ def test_infer():
         "confidence_threshold": 0.2
     }
     response = requests.post("http://150.136.41.107:80/infer", json=body)
-    print(response, response.text)
+    json_response = response.json()
+    
+
+    # bboxes = json_response['boxes']
+    # image = Image.open("dog.jpg")
+    # draw = ImageDraw.Draw(image)
+
+    # for box in bboxes:
+    #     bbox = box['bbox']
+    #     left = bbox['x'] * image.width
+    #     top = bbox['y'] * image.height
+    #     right = (bbox['x'] + bbox['w']) * image.width
+    #     bottom = (bbox['y'] + bbox['h']) * image.height
+    #     draw.rectangle(((left, top), (right, bottom)), outline="red")
+
+    # image.save("dog_with_boxes.jpg")
 
 test_train()
 test_infer()
