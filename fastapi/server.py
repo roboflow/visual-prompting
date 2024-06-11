@@ -27,6 +27,10 @@ class Image(BaseModel):
     contents: str
     boxes: List[Box]
 
+def to_pil_image(contents):
+    image_bytes = io.BytesIO(base64.b64decode(contents.encode('utf-8')))
+    return PILImage.open(image_bytes)
+
 async def fifo_worker():
     print("Starting DB Worker")
     while True:
@@ -39,10 +43,16 @@ def deploy_model(images):
     print("TO BE IMPLEMENTED")
     return "SAMPLE_UUID"
 
+async def get_bboxes(model_id, pil_image):
+    print("TO BE IMPLEMENTED")
+    return [{"sample": "bbox"}]
+
 @app.post("/train")
 async def train(images: List[Image]):
-    
-    model_id = deploy_model(images)
+    dict_image = [image.dict() for image in images]
+    for i in dict_image:
+        i["pil_contents"] = to_pil_image(i["contents"])
+    model_id = deploy_model(dict_image)
     # You can now access your images with the "images" variable
     # Do something with the images here
     return {
@@ -52,15 +62,13 @@ async def train(images: List[Image]):
 
 @app.post("/infer")
 async def infer(model_id: str, image_contents: str):
-    image_bytes = io.BytesIO(base64.b64decode(image_contents.encode('utf-8')))
-    pil_image = PILImage.open(image_bytes)
+    pil_image = to_pil_image(image_contents)
     
     future = asyncio.Future()
     
-    async def task():
+    async def task(model_id=model_id, pil_image=pil_image):
         # Do something with the images here
-        await asyncio.sleep(10)
-        result = "result of your task"
+        result = await get_bboxes(model_id, pil_image)
         future.set_result(result)
     
     await app.fifo_queue.put(task)
