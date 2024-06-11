@@ -34,12 +34,12 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
     if (imageUrl && ctx) {
       const img = new Image();
       img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas?.width || 0, canvas?.height || 0);
+        ctx.drawImage(img, 0, 0, canvas?.width || 0, canvas?.height || 0);
 
         // Calculate scale ratios
-        const scaleX = canvas.width / img.width;
-        const scaleY = canvas.height / img.height;
+        const scaleX = (canvas?.width||0) / img.width;
+        const scaleY = (canvas?.height||0) / img.height;
 
         boxes.forEach(box => {
           // Adjust box dimensions to canvas scale
@@ -91,10 +91,10 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
         boxes.forEach(box => {
           // Adjust box dimensions to canvas scale
           const scaledBox = {
-            x: box.x * (canvasRef.current.width / imageRef.current.width),
-            y: box.y * (canvasRef.current.height / imageRef.current.height),
-            width: box.width * (canvasRef.current.width / imageRef.current.width),
-            height: box.height * (canvasRef.current.height / imageRef.current.height),
+            x: box.x * ((canvasRef?.current?.width) || 0 / (imageRef?.current?.width || 1)),
+            y: box.y * ((canvasRef?.current?.height) || 0 / (imageRef?.current?.height || 1)),
+            width: box.width * ((canvasRef?.current?.width) || 0 / (imageRef?.current?.width || 1)),
+            height: box.height * ((canvasRef?.current?.height) || 0 / (imageRef?.current?.height || 1)),
           };
 
           ctx.strokeStyle = 'red';

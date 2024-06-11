@@ -91,7 +91,7 @@ export default function Home() {
                   </label>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={testImages} />
+                      <ImageGrid images={testImages} onImageClick={() => {}} boxes={{}} />
                     </div>
                     <input
                       type="file"
@@ -110,7 +110,7 @@ export default function Home() {
                     </label>
                   </div>
                 </div>
-                <Button type="button" onClick={() => document.getElementById('test-images').click()}>Add Test Images</Button>
+                <Button type="button" onClick={() => document.getElementById('test-images')?.click()}>Add Test Images</Button>
               </form>
             </div>
           </section>
