@@ -30,6 +30,7 @@ class Image(BaseModel):
 class InferenceRequest(BaseModel):
     model_id: str
     image_contents: str
+    confidence_threshold: float = 0.1
 
 class TrainResponse(BaseModel):
     message: str
