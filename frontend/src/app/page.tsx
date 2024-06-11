@@ -10,6 +10,13 @@ export default function Home() {
   const [testImages, setTestImages] = useState<File[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [exampleBoxes, setExampleBoxes] = useState<{ [key: string]: { x: number, y: number, width: number, height: number }[] }>({});
+
+  function onBoxAdded(box: { x: number, y: number, width: number, height: number }) {
+    if (selectedImage) {
+      setExampleBoxes({ ...exampleBoxes, [selectedImage.name]: [...(exampleBoxes[selectedImage.name] || []), box] });
+    }
+  }
 
   function handleExampleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -114,8 +121,8 @@ export default function Home() {
           imageFile={selectedImage}
           isOpen={isDialogOpen}
           onClose={() => setDialogOpen(false)}
-          boxes={[]} // Assuming you need to pass an empty array if no boxes are defined yet
-          onAddBox={(box) => console.log('Box added:', box)} // Replace with your actual function to handle adding a box
+          boxes={exampleBoxes[selectedImage.name] || []}
+          onAddBox={onBoxAdded}
         />
       )}
     </div>
