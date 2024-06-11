@@ -1,5 +1,6 @@
 "use client"
 
+import ImageGrid from "@/components/ImageGrid";
 import { Button } from "@/components/ui/button"
 import { useState } from "react";
 
@@ -43,6 +44,9 @@ export default function Home() {
                     Example Images
                   </label>
                   <div>
+                    <div className="mb-5">
+                      <ImageGrid images={exampleImages} />
+                    </div>
                     <input
                       type="file"
                       id="example-images"
@@ -76,6 +80,9 @@ export default function Home() {
                     Test Images
                   </label>
                   <div>
+                    <div className="mb-5">
+                      <ImageGrid images={testImages} />
+                    </div>
                     <input
                       type="file"
                       id="test-images"
