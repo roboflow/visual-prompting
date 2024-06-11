@@ -82,6 +82,7 @@ export default function Home() {
           onClose={() => setDialogOpen(false)}
           boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
+          suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
         />
       )}
     </div>
