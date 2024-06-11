@@ -7,7 +7,7 @@ from transformers.models.owlv2.modeling_owlv2 import box_iou
 import hashlib
 import numpy as np
 import torch
-
+from typing import Dict
 
 class OwlVitWrapper:
     def __init__(self, owl_name: str="google/owlv2-base-patch16-ensemble"):
@@ -100,7 +100,7 @@ class OwlVitWrapper:
             {
                 "class_name": class_names[c],
                 "x": bbox[0],
-                "y:" bbox[1],
+                "y": bbox[1],
                 "w": bbox[2],
                 "h": bbox[3],
                 "confidence": score
@@ -114,8 +114,6 @@ owl_vit_interface = OwlVitWrapper()
 class OurModel:
     # { "class_name": QueryEmbedding }
     my_class_to_embeddings_dict: Dict[str, "Embedding"]
-    id_
-    json_spec
     def __init__(self, my_class_to_embeddings_dict, id_):
         self.id = id_
         self.my_class_to_embeddings_dict = my_class_to_embeddings_dict
