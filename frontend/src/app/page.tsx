@@ -52,8 +52,10 @@ export default function Home() {
                     />
                     <label htmlFor="example-images" className="flex items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg h-32 cursor-pointer dark:border-gray-600">
                       <div className="text-center">
-                        <UploadIcon className="h-6 w-6 text-gray-400 mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">Drag and drop files or click to upload</p>
+                        <div className="flex flex-col items-center">
+                          <UploadIcon className="h-6 w-6 text-gray-400 mb-2" />
+                          <p className="text-gray-500 dark:text-gray-400">Drag and drop files or click to upload</p>
+                        </div>
                       </div>
                     </label>
                   </div>
@@ -83,8 +85,10 @@ export default function Home() {
                     />
                     <label htmlFor="test-images" className="flex items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg h-32 cursor-pointer dark:border-gray-600">
                       <div className="text-center">
-                        <UploadIcon className="h-6 w-6 text-gray-400 mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">Drag and drop files or click to upload</p>
+                        <div className="flex flex-col items-center">
+                          <UploadIcon className="h-6 w-6 text-gray-400 mb-2" />
+                          <p className="text-gray-500 dark:text-gray-400">Drag and drop files or click to upload</p>
+                        </div>
                       </div>
                     </label>
                   </div>
