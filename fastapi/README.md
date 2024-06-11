@@ -1,0 +1,1 @@
+To Build & Run: `docker build . -t visual && docker run -p 8000:8000 visual:latest`
