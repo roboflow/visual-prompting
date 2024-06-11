@@ -31,6 +31,14 @@ class InferenceRequest(BaseModel):
     model_id: str
     image_contents: str
 
+class TrainResponse(BaseModel):
+    message: str
+    model_id: str
+
+class InferResponse(BaseModel):
+    message: str
+    boxes: List[Box]
+
 def to_pil_image(contents):
     image_bytes = io.BytesIO(base64.b64decode(contents.encode('utf-8')))
     return PILImage.open(image_bytes)
@@ -51,7 +59,7 @@ async def get_bboxes(model_id, pil_image):
     print("TO BE IMPLEMENTED")
     return [{"sample": "bbox"}]
 
-@app.post("/train")
+@app.post("/train", responses={200: {"model": TrainResponse}})
 async def train(images: List[Image]):
     dict_image = [image.dict() for image in images]
     for i in dict_image:
@@ -64,7 +72,7 @@ async def train(images: List[Image]):
         "model_id": model_id
     }
 
-@app.post("/infer")
+@app.post("/infer", responses={200: {"model": InferResponse}})
 async def infer(request: InferenceRequest):
     pil_image = to_pil_image(request.image_contents)
     
@@ -80,4 +88,7 @@ async def infer(request: InferenceRequest):
     
     # You can now access your images with the "images" variable
     # Do something with the images here
-    return {"message": "running inference!"}
+    return {
+        "message": "ran inference!",
+        "boxes": []
+    }
