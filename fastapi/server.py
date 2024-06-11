@@ -27,6 +27,10 @@ class Image(BaseModel):
     contents: str
     boxes: List[Box]
 
+class InferenceRequest(BaseModel):
+    model_id: str
+    image_contents: str
+
 def to_pil_image(contents):
     image_bytes = io.BytesIO(base64.b64decode(contents.encode('utf-8')))
     return PILImage.open(image_bytes)
@@ -61,12 +65,12 @@ async def train(images: List[Image]):
     }
 
 @app.post("/infer")
-async def infer(model_id: str, image_contents: str):
-    pil_image = to_pil_image(image_contents)
+async def infer(request: InferenceRequest):
+    pil_image = to_pil_image(request.image_contents)
     
     future = asyncio.Future()
     
-    async def task(model_id=model_id, pil_image=pil_image):
+    async def task(model_id=request.model_id, pil_image=pil_image):
         # Do something with the images here
         result = await get_bboxes(model_id, pil_image)
         future.set_result(result)
