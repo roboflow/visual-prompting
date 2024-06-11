@@ -13,6 +13,7 @@ interface ImageDialogProps {
 const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, boxes, onAddBox }) => {
   const [imageUrl, setImageUrl] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
@@ -40,6 +41,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
           ctx.strokeStyle = 'red';
           ctx.strokeRect(box.x, box.y, box.width, box.height);
         });
+        imageRef.current = img; // Store the loaded image
       };
       img.src = imageUrl;
     }
@@ -70,22 +72,18 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
         height: currentHeight,
       });
 
-      if (ctx) {
+      if (ctx && imageRef.current) {
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-          boxes.forEach(box => {
-            ctx.strokeStyle = 'red';
-            ctx.strokeRect(box.x, box.y, box.width, box.height);
-          });
-          // Draw the current box
-          if (currentBox) {
-            ctx.strokeStyle = 'blue';
-            ctx.strokeRect(startPos.x, startPos.y, currentWidth, currentHeight);
-          }
-        };
-        img.src = imageUrl;
+        ctx.drawImage(imageRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        boxes.forEach(box => {
+          ctx.strokeStyle = 'red';
+          ctx.strokeRect(box.x, box.y, box.width, box.height);
+        });
+        // Draw the current box
+        if (currentBox) {
+          ctx.strokeStyle = 'red';
+          ctx.strokeRect(startPos.x, startPos.y, currentWidth, currentHeight);
+        }
       }
     }
   };
