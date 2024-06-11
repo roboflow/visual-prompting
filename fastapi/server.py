@@ -13,9 +13,15 @@ async def startup_event():
     app.fifo_queue = asyncio.Queue()
     asyncio.create_task(fifo_worker())
 
+class BBox(BaseModel):
+    w: int
+    h: int
+    x: int
+    y: int
+
 class Box(BaseModel):
     class_: str
-    bbox: List[int]
+    bbox: BBox
 
 class Image(BaseModel):
     contents: str
