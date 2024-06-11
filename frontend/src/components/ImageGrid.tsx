@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useRef } from 'react'
+import { Box } from '@/lib/types'
 
 interface ImageGridProps {
-  boxes: { [key: string]: { x: number, y: number, width: number, height: number }[] }
+  boxes: { [key: string]: Box[] }
   images: File[]
   onImageClick: (image: File) => void
 }

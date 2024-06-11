@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react";
 import ImageDialog from "@/components/ImageDialog";
 
+import { Box, Datum } from "@/lib/types";
+
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const [userBoxes, setUserBoxes] = useState<{ [key: string]: { x: number, y: number, width: number, height: number }[] }>({});
+  const [userBoxes, setUserBoxes] = useState<{ [key: string]: Box[] }>({});
 
-  function onBoxAdded(box: { x: number, y: number, width: number, height: number }) {
+  function onBoxAdded(box: Box) {
     if (selectedImage) {
       setUserBoxes({ ...userBoxes, [selectedImage.name]: [...(userBoxes[selectedImage.name] || []), box] });
     }

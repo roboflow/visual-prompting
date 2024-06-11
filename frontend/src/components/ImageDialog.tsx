@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent } from './ui/dialog';
 
+import { Box } from '@/lib/types';
+
 interface ImageDialogProps {
   imageFile: File;
   isOpen: boolean;
   onClose: () => void;
-  boxes: { x: number, y: number, width: number, height: number }[];
-  onAddBox: (box: { x: number, y: number, width: number, height: number }) => void;
+  boxes: Box[];
+  onAddBox: (box: Box) => void;
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, boxes, onAddBox }) => {
@@ -15,7 +17,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [currentBox, setCurrentBox] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
+  const [currentBox, setCurrentBox] = useState<Box | null>(null);
 
   useEffect(() => {
     if (imageFile) {
