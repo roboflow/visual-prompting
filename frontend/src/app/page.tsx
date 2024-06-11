@@ -74,7 +74,7 @@ export default function Home() {
                     </label>
                   </div>
                 </div>
-                <Button type="button" onClick={() => document.getElementById('example-images').click()}>Add Example Images</Button>
+                <Button type="button" onClick={() => document.getElementById('example-images')?.click()}>Add Example Images</Button>
               </form>
             </div>
           </section>
