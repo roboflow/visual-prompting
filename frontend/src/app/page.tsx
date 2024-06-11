@@ -37,7 +37,7 @@ export default function Home() {
       <main className="flex-1 bg-gray-100 dark:bg-gray-800 py-12 md:py-24">
         <div className="container max-w-4xl px-4 md:px-6 space-y-12">
           <section>
-            <h1 className="text-3xl font-bold mb-4">OWL v2 Image Prompting Demo</h1>
+            <h1 className="text-3xl font-bold mb-4">OWLv2 Few-Shot Object Detection Demo</h1>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               OWL v2 is a model for zero-shot object detection using image and text prompting.
             </p>
