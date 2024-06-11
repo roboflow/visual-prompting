@@ -21,11 +21,11 @@ class BBox(BaseModel):
     y: float
 
 class Box(BaseModel):
-    class_: str
+    cls: str
     bbox: BBox
 
 class Image(BaseModel):
-    contents: str
+    image_contents: str
     boxes: List[Box]
 
 class InferenceRequest(BaseModel):
