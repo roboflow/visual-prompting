@@ -31,7 +31,7 @@ export default function Home() {
           <section>
             <h1 className="text-3xl font-bold mb-4">OWLv2 Few-Shot Object Detection Demo</h1>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              OWL v2 is a model for zero-shot object detection using image and text prompting.
+              OWLv2 is a model for zero-shot object detection using image and text prompting.
             </p>
           </section>
           <section>
