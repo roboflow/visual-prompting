@@ -79,7 +79,7 @@ export default function Home() {
         <ImageDialog
           imageFile={selectedImage}
           isOpen={isDialogOpen}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => { setDialogOpen(false); setSelectedImage(null); }}
           boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
           suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
