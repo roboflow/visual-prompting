@@ -23,7 +23,15 @@ def test_train():
 
 
 def test_infer():
-    # do it on dog
-    pass
+    with open("dog.jpg", "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+    body = {
+        "model_id": "RANDOM_MODEL_UUID",
+        "image_contents": encoded_string,
+        "confidence_threshold": 0.2
+    }
+    response = requests.post("http://150.136.41.107:80/infer", json=body)
+    print(response, response.text)
 
 test_train()
+test_infer()
