@@ -6,29 +6,21 @@ import { useState } from "react";
 import ImageDialog from "@/components/ImageDialog";
 
 export default function Home() {
-  const [exampleImages, setExampleImages] = useState<File[]>([]);
-  const [testImages, setTestImages] = useState<File[]>([]);
+  const [images, setImages] = useState<File[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const [exampleBoxes, setExampleBoxes] = useState<{ [key: string]: { x: number, y: number, width: number, height: number }[] }>({});
+  const [userBoxes, setUserBoxes] = useState<{ [key: string]: { x: number, y: number, width: number, height: number }[] }>({});
 
   function onBoxAdded(box: { x: number, y: number, width: number, height: number }) {
     if (selectedImage) {
-      setExampleBoxes({ ...exampleBoxes, [selectedImage.name]: [...(exampleBoxes[selectedImage.name] || []), box] });
+      setUserBoxes({ ...userBoxes, [selectedImage.name]: [...(userBoxes[selectedImage.name] || []), box] });
     }
   }
 
-  function handleExampleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (files) {
-      setExampleImages([...exampleImages, ...Array.from(files)]);
-    }
-  }
-
-  function handleTestUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (files) {
-      setTestImages([...testImages, ...Array.from(files)]);
+      setImages([...images, ...Array.from(files)]);
     }
   }
 
@@ -43,28 +35,26 @@ export default function Home() {
             </p>
           </section>
           <section>
-            <h2 className="text-2xl font-bold mb-4">Example Images</h2>
+            <h2 className="text-2xl font-bold mb-4">Images</h2>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               Add one or more images that you want to label as examples for your computer vision model.
+              As you label, the model will make predictions on the images and learn from your examples.
             </p>
             <div className="bg-white dark:bg-gray-950 rounded-lg p-6 shadow">
               <form className="space-y-6">
                 <div>
-                  <label htmlFor="example-images" className="block font-medium mb-2">
-                    Example Images
-                  </label>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={exampleImages} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} boxes={exampleBoxes} />
+                      <ImageGrid images={images} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} boxes={userBoxes} />
                     </div>
                     <input
                       type="file"
                       id="example-images"
                       className="hidden"
-                      onChange={handleExampleUpload}
+                      onChange={handleImageUpload}
                       multiple
                     />
-                    {exampleImages.length === 0 && (
+                    {images.length === 0 && (
                       <label htmlFor="example-images" className="flex items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg h-32 cursor-pointer dark:border-gray-600">
                         <div className="text-center">
                           <div className="flex flex-col items-center">
@@ -80,44 +70,6 @@ export default function Home() {
               </form>
             </div>
           </section>
-          <section>
-            <h2 className="text-2xl font-bold mb-4">Test Images</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Add images that you want to test your computer vision model on. Bounding boxes will update as you label your example images.
-            </p>
-            <div className="bg-white dark:bg-gray-950 rounded-lg p-6 shadow">
-              <form className="space-y-6">
-                <div>
-                  <label htmlFor="test-images" className="block font-medium mb-2">
-                    Test Images
-                  </label>
-                  <div>
-                    <div className="mb-5">
-                      <ImageGrid images={testImages} onImageClick={() => { }} boxes={{}} />
-                    </div>
-                    <input
-                      type="file"
-                      id="test-images"
-                      className="hidden"
-                      onChange={handleTestUpload}
-                      multiple
-                    />
-                    {testImages.length === 0 && (
-                      <label htmlFor="test-images" className="flex items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg h-32 cursor-pointer dark:border-gray-600">
-                        <div className="text-center">
-                          <div className="flex flex-col items-center">
-                            <UploadIcon className="h-6 w-6 text-gray-400 mb-2" />
-                            <p className="text-gray-500 dark:text-gray-400">Drag and drop files or click to upload</p>
-                          </div>
-                        </div>
-                      </label>
-                    )}
-                  </div>
-                </div>
-                <Button type="button" onClick={() => document.getElementById('test-images')?.click()}>Add Test Images</Button>
-              </form>
-            </div>
-          </section>
         </div>
       </main>
       {selectedImage && (
@@ -125,7 +77,7 @@ export default function Home() {
           imageFile={selectedImage}
           isOpen={isDialogOpen}
           onClose={() => setDialogOpen(false)}
-          boxes={exampleBoxes[selectedImage.name] || []}
+          boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
         />
       )}
