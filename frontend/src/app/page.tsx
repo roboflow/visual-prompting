@@ -21,14 +21,14 @@ export default function Home() {
   function handleExampleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (files) {
-      setExampleImages(Array.from(files));
+      setExampleImages([...exampleImages, ...Array.from(files)]);
     }
   }
 
   function handleTestUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (files) {
-      setTestImages(Array.from(files));
+      setTestImages([...testImages, ...Array.from(files)]);
     }
   }
 
@@ -91,7 +91,7 @@ export default function Home() {
                   </label>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={testImages} onImageClick={() => {}} boxes={{}} />
+                      <ImageGrid images={testImages} onImageClick={() => { }} boxes={{}} />
                     </div>
                     <input
                       type="file"
