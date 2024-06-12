@@ -4,11 +4,19 @@ import base64
 import random
 import string
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 from PIL import Image as PILImage
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.on_event("startup")
 async def startup_event():
     app.config_dict = {}
@@ -77,7 +85,7 @@ async def get_bboxes(model_id, pil_image):
 async def train(images: List[Image]):
     dict_image = [image.dict() for image in images]
     for i in dict_image:
-        i["pil_contents"] = to_pil_image(i["contents"])
+        i["pil_contents"] = to_pil_image(i["image_contents"])
     model_id = deploy_model(dict_image)
     # You can now access your images with the "images" variable
     # Do something with the images here
