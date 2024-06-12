@@ -26,8 +26,8 @@ class OwlVitWrapper:
         image_embeds, _ = self.model.image_embedder(pixel_values=pixel_values)
         batch_size, h, w, dim = image_embeds.shape
         image_features = image_embeds.reshape(batch_size, h * w, dim)
-        objectnesses = model.objectness_predictor(image_features)
-        boxes = model.box_predictor(image_features, feature_map=image_embeds)
+        objectness = self.model.objectness_predictor(image_features)
+        boxes = self.model.box_predictor(image_features, feature_map=image_embeds)
         
         # class_embeddings =  model.class_predictor(image_features)[1]
         image_class_embeds = self.model.class_head.dense0(image_features)
@@ -36,7 +36,7 @@ class OwlVitWrapper:
         logit_scale = self.model.class_head.elu(self.model.class_head.logit_scale(image_features)) + 1
         objectness = objectness.sigmoid()
 
-        self.image_embed_cache[image_hash] = (objectnesses.squeeze(0),
+        self.image_embed_cache[image_hash] = (objectness.squeeze(0),
             boxes.squeeze(0),
             image_class_embeds.squeeze(0),
             logit_shift.squeeze(0),
@@ -71,7 +71,7 @@ class OwlVitWrapper:
         class_names = sorted(list(query_embeddings.keys()))
         class_map = {class_name: i for i, class_name in enumerate(class_names)}
         for class_name, embedding in query_embeddings.items():
-            pred_logits = torch.einsum("...pd,...qd->...pq", image_class_embeds, embedding)
+            pred_logits = torch.einsum("...pd,...qd->...pq", image_class_embeds, embedding.unsqueeze(0)).squeeze(1)
             pred_logits = (pred_logits + logit_shift) * logit_scale
             prediction_scores = pred_logits.sigmoid()
             score_mask = prediction_scores > confidence
@@ -135,19 +135,22 @@ class OurModel:
         return torch.load(cls.filename(uid))
 
     def save(self):
-        torch.save(self.filename(self.id_))
+        os.makedirs("models", exist_ok=True)
+        torch.save(self, self.filename(self.id))
 
     @classmethod
     def create(cls, json_spec, uid):
         id_ = uid
         
         class_to_query_spec = defaultdict(lambda: defaultdict(list))
+
         for image_spec in json_spec:
-            image: Image = image_spec["contents"]
+            image: Image = image_spec["pil_contents"]
             image_hash = owl_vit_interface.embed_image(image)
             boxes = image_spec["boxes"]
             for box in boxes:
-                class_name = box["class"]
+                class_name = box["cls"]
+                box = box["bbox"]
                 coords = box["x"], box["y"], box["w"], box["h"]
                 class_to_query_spec[class_name][image_hash].append(coords)
 

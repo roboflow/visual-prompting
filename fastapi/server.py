@@ -5,7 +5,7 @@ import random
 import string
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from PIL import Image as PILImage
 from model.owlv2 import OurModel
 from uuid import uuid4
@@ -26,7 +26,7 @@ class BBox(BaseModel):
 class Box(BaseModel):
     cls: str
     bbox: BBox
-    confidence: float
+    confidence: Optional[float] = 0.5
 
 class Image(BaseModel):
     image_contents: str
@@ -59,7 +59,7 @@ async def fifo_worker():
 ## TODO
 async def deploy_model(images):
     uuid = str(uuid4())
-    model = OurModel.create(uuid, images.dict())
+    model = OurModel.create(images, uuid)
     return uuid
 
 async def get_bboxes(model_id, pil_image, confidence):
@@ -82,7 +82,7 @@ async def get_bboxes(model_id, pil_image, confidence):
 async def train(images: List[Image]):
     dict_image = [image.dict() for image in images]
     for i in dict_image:
-        i["pil_contents"] = to_pil_image(i["contents"])
+        i["pil_contents"] = to_pil_image(i["image_contents"])
 
     future = asyncio.Future()
     async def task(dict_image=dict_image):
@@ -106,7 +106,7 @@ async def infer(request: InferenceRequest):
     
     future = asyncio.Future()
     
-    async def task(model_id=request.model_id, pil_image=pil_image, confidence=request.confidence):
+    async def task(model_id=request.model_id, pil_image=pil_image, confidence=request.confidence_threshold):
         # Do something with the images here
         result = await get_bboxes(model_id, pil_image, confidence)
         future.set_result(result)

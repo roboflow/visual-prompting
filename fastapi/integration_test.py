@@ -19,21 +19,22 @@ def test_train():
         "image_contents": encoded_string,
         "boxes": boxes
     }]
-    response = requests.post("http://150.136.41.107:80/train", json=body)
+    response = requests.post("http://150.136.41.107:81/train", json=body)
     print(response, response.text)
+    return response.json()["model_id"]
 
 
-def test_infer():
+def test_infer(model_id):
     with open("dog.jpg", "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     body = {
-        "model_id": "RANDOM_MODEL_UUID",
+        "model_id": model_id,
         "image_contents": encoded_string,
         "confidence_threshold": 0.2
     }
-    response = requests.post("http://150.136.41.107:80/infer", json=body)
+    response = requests.post("http://150.136.41.107:81/infer", json=body)
     json_response = response.json()
-    
+    print(json_response)
 
     # bboxes = json_response['boxes']
     # image = Image.open("dog.jpg")
@@ -49,5 +50,5 @@ def test_infer():
 
     # image.save("dog_with_boxes.jpg")
 
-test_train()
-test_infer()
+model_id = test_train()
+test_infer(model_id)
