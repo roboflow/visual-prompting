@@ -30,7 +30,7 @@ def test_infer(model_id):
     body = {
         "model_id": model_id,
         "image_contents": encoded_string,
-        "confidence_threshold": 0.2
+        "confidence_threshold": 0.5
     }
     response = requests.post("http://150.136.41.107:81/infer", json=body)
     json_response = response.json()

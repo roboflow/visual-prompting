@@ -39,8 +39,8 @@ class OwlVitWrapper:
         self.image_embed_cache[image_hash] = (objectness.squeeze(0),
             boxes.squeeze(0),
             image_class_embeds.squeeze(0),
-            logit_shift.squeeze(0),
-            logit_scale.squeeze(0))
+            logit_shift.squeeze(0).squeeze(1),
+            logit_scale.squeeze(0).squeeze(1))
 
         return image_hash
 
@@ -71,12 +71,12 @@ class OwlVitWrapper:
         class_names = sorted(list(query_embeddings.keys()))
         class_map = {class_name: i for i, class_name in enumerate(class_names)}
         for class_name, embedding in query_embeddings.items():
-            pred_logits = torch.einsum("...pd,...qd->...pq", image_class_embeds, embedding.unsqueeze(0)).squeeze(1)
+            pred_logits = torch.einsum("sd,d->s", image_class_embeds, embedding)
             pred_logits = (pred_logits + logit_shift) * logit_scale
             prediction_scores = pred_logits.sigmoid()
             score_mask = prediction_scores > confidence
-            predicted_boxes.append(image_boxes[score_mask])
-            scores = predicted_scores[score_mask]
+            predicted_boxes.append(image_boxes[score_mask, :])
+            scores = prediction_scores[score_mask]
             predicted_scores.append(scores)
             class_ind = class_map[class_name]
             predicted_classes.append(class_ind * torch.ones_like(scores))
@@ -98,14 +98,14 @@ class OwlVitWrapper:
         pred_scores = all_scores[survival_indices].detach().cpu().numpy()
         return [
             {
-                "class_name": class_names[c],
-                "x": bbox[0],
-                "y": bbox[1],
-                "w": bbox[2],
-                "h": bbox[3],
-                "confidence": score
+                "class_name": class_names[int(c)],
+                "x": float(x) ,
+                "y": float(y),
+                "w": float(w),
+                "h": float(h),
+                "confidence": float(score)
             }
-            for c, bbox, score in zip(pred_classes, pred_boxes, pred_scores)
+            for c, (x, y, w, h), score in zip(pred_classes, pred_boxes, pred_scores)
         ]
         return class_preds
 

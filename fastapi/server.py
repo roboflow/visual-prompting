@@ -65,8 +65,9 @@ async def deploy_model(images):
 async def get_bboxes(model_id, pil_image, confidence):
     model = OurModel.load(model_id)
     boxes = model.infer(pil_image, confidence)
+    out_boxes = []
     for box in boxes:
-        boxes.append(Box(
+        out_boxes.append(Box(
             cls = box["class_name"],
             bbox = BBox(
                 w=box["w"],
