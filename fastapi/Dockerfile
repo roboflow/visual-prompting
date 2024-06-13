@@ -4,5 +4,5 @@ RUN pip install -r requirements.txt
 RUN pip install scipy
 COPY server.py .
 COPY model ./model
-EXPOSE 81
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "81"]
+EXPOSE 80
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "80"]

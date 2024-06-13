@@ -8,11 +8,19 @@ import hashlib
 import numpy as np
 import torch
 from typing import Dict
+def to_corners(box):
+    cx, cy, w, h = box.unbind(-1)
+    x1 = cx - w / 2
+    y1 = cy - h / 2
+    x2 = cx + w / 2
+    y2 = cy + h / 2
+    return torch.stack([x1, y1, x2, y2], dim=-1)
+
 
 class OwlVitWrapper:
     def __init__(self, owl_name: str="google/owlv2-base-patch16-ensemble"):
         self.processor = Owlv2Processor.from_pretrained(owl_name)
-        self.model = Owlv2ForObjectDetection.from_pretrained(owl_name)
+        self.model = Owlv2ForObjectDetection.from_pretrained(owl_name).eval()
         self.image_embed_cache = dict()  # NOTE: this should have a max size
 
     @torch.no_grad()
@@ -31,7 +39,7 @@ class OwlVitWrapper:
         
         # class_embeddings =  model.class_predictor(image_features)[1]
         image_class_embeds = self.model.class_head.dense0(image_features)
-        image_class_embeds /= torch.linalg.norm(image_class_embeds, dim=-1, keepdim=True) + 1e-6
+        image_class_embeds /= torch.linalg.norm(image_class_embeds, ord=2, dim=-1, keepdim=True) + 1e-6
         logit_shift = self.model.class_head.logit_shift(image_features)
         logit_scale = self.model.class_head.elu(self.model.class_head.logit_scale(image_features)) + 1
         objectness = objectness.sigmoid()
@@ -54,14 +62,17 @@ class OwlVitWrapper:
                 raise KeyError("We didn't embed the image first!") from error
             
             query_boxes_tensor = torch.tensor(query_boxes, dtype=torch.float, device=image_boxes.device)
-            iou, union = box_iou(image_boxes, query_boxes_tensor) # 3000, k
+            iou, union = box_iou(to_corners(image_boxes), to_corners(query_boxes_tensor)) # 3000, k
             iou_mask = iou > 0.3
             valid_objectness = torch.where(iou_mask, objectness.unsqueeze(-1), -1) # 3000, k
             indices = torch.argmax(valid_objectness, dim=0)
             embeds = image_class_embeds[indices]
             query_embeds.append(embeds)
 
-        return torch.cat(query_embeds).mean(dim=0)
+
+        query =  torch.cat(query_embeds).mean(dim=0)
+        query /= torch.linalg.norm(query, ord=2)  + 1e-6
+        return query
 
     def infer(self, image_hash: "Hash", query_embeddings, confidence):
         objectness, image_boxes, image_class_embeds, logit_shift, logit_scale = self.image_embed_cache[image_hash]
@@ -81,14 +92,6 @@ class OwlVitWrapper:
             class_ind = class_map[class_name]
             predicted_classes.append(class_ind * torch.ones_like(scores))
         
-        def to_corners(box):
-            cx, cy, w, h = box.unbind(-1)
-            x1 = cx - w / 2
-            y1 = cy - h / 2
-            x2 = cx + w / 2
-            y2 = cy + h / 2
-            return torch.stack([x1, y1, x2, y2], dim=-1)
-
         all_boxes = torch.cat(predicted_boxes, dim=0)
         all_classes = torch.cat(predicted_classes, dim=0)
         all_scores = torch.cat(predicted_scores, dim=0)
