@@ -7,17 +7,88 @@ import ImageDialog from "@/components/ImageDialog";
 
 import { Box, Datum } from "@/lib/types";
 
+const API_ROOT = "https://api.owlvit.com"
+
+const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result as string);
+  reader.onerror = error => reject(error);
+});
+
+function normalizeBoxes(boxes: Box[], imageWidth: number, imageHeight: number) {
+  return boxes.map(box => ({
+    cls: "cat",
+    bbox: {
+      x: (box.x + box.width / 2) / imageWidth,
+      y: (box.y + box.height / 2) / imageHeight,
+      w: box.width / imageWidth,
+      h: box.height / imageHeight
+    },
+    confidence: 0.5
+  }));
+}
+
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [userBoxes, setUserBoxes] = useState<{ [key: string]: Box[] }>({});
   const [suggestedBoxes, setSuggestedBoxes] = useState<{ [key: string]: Box[] }>({});
+  const [returnedImage, setReturnedImage] = useState<string | null>(null);
 
-  function onBoxAdded(box: Box) {
-    if (selectedImage) {
-      setUserBoxes({ ...userBoxes, [selectedImage.name]: [...(userBoxes[selectedImage.name] || []), box] });
+  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
+    if (!selectedImage) {
+      return
     }
+
+    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
+    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
+
+    const imageBase64 = (await toBase64(selectedImage))
+      .replace("data:image/png;base64,", "")
+      .replace("data:image/jpeg;base64,", "");
+
+    // Train
+    const trainResponse = await fetch(`${API_ROOT}/train`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify([{
+        image_contents: imageBase64,
+        boxes: normalizeBoxes(newBoxes, imageWidth, imageHeight)
+      }]),
+    });
+
+    // Infer
+    const trainData = await trainResponse.json();
+    const modelId = trainData.model_id;
+
+    const inferResponse = await fetch(`${API_ROOT}/infer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model_id: modelId,
+        image_contents: imageBase64,
+        confidence_threshold: 0.999
+      }),
+    });
+
+    const inferData = await inferResponse.json();
+
+    const newSuggestedBoxes = inferData.boxes.map((box: any) => ({
+      class: box.cls,
+      x: box.bbox.x * imageWidth,
+      y: box.bbox.y * imageHeight,
+      width: box.bbox.w * imageWidth,
+      height: box.bbox.h * imageHeight
+    }));
+
+    setSuggestedBoxes({ ...suggestedBoxes, [selectedImage.name]: newSuggestedBoxes });
+    // setReturnedImage(`data:image/jpeg;base64,${trainData.image}`);
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -70,6 +141,7 @@ export default function Home() {
                   </div>
                 </div>
                 <Button type="button" onClick={() => document.getElementById('example-images')?.click()}>Add Images</Button>
+                {returnedImage && <img src={returnedImage} />}
               </form>
             </div>
           </section>

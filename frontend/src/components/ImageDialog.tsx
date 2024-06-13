@@ -8,7 +8,7 @@ interface ImageDialogProps {
   isOpen: boolean;
   onClose: () => void;
   boxes: Box[];
-  onAddBox: (box: Box) => void;
+  onAddBox: (box: Box, imageWidth: number, imageHeight: number) => void;
   suggestedBoxes: Box[];
 }
 
@@ -19,6 +19,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
+  const [returnedImage, setReturnedImage] = useState<string | null>(null);
 
   const renderBoxes = useCallback(() => {
     const canvas = canvasRef.current;
@@ -40,9 +41,22 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
       });
 
       suggestedBoxes.forEach(box => {
-        ctx.strokeStyle = 'green';
+        const scaledX = box.x * scaleX
+        const scaledY = box.y * scaleY
+        const scaledWidth = box.width * scaleX
+        const scaledHeight = box.height * scaleY
+        const x1 = scaledX - scaledWidth / 2
+        const y1 = scaledY - scaledHeight / 2
+
+
+        ctx.strokeStyle = 'blue';
         ctx.setLineDash([2, 2]);
-        ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+        ctx.strokeRect(
+          x1,
+          y1,
+          scaledWidth,
+          scaledHeight
+        );
       });
     }
   }, [boxes, imageRef, suggestedBoxes]);
@@ -123,11 +137,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({ imageFile, isOpen, onClose, b
       const adjustedBox = {
         x: currentBox.x * scaleX,
         y: currentBox.y * scaleY,
-        width: currentBox.width * scaleX,
-        height: currentBox.height * scaleY,
+        width: Math.abs(currentBox.width) * scaleX,
+        height: Math.abs(currentBox.height) * scaleY,
       };
 
-      onAddBox(adjustedBox);
+      onAddBox(adjustedBox, imgWidth, imgHeight);
       setCurrentBox(null);
     }
     setIsDrawing(false);
