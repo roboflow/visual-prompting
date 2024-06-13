@@ -12,6 +12,7 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [userBoxes, setUserBoxes] = useState<{ [key: string]: Box[] }>({});
+  const [suggestedBoxes, setSuggestedBoxes] = useState<{ [key: string]: Box[] }>({});
 
   function onBoxAdded(box: Box) {
     if (selectedImage) {
@@ -47,7 +48,7 @@ export default function Home() {
                 <div>
                   <div>
                     <div className="mb-5">
-                      <ImageGrid images={images} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} boxes={userBoxes} />
+                      <ImageGrid images={images} onImageClick={(image) => { setSelectedImage(image); setDialogOpen(true); }} boxes={userBoxes} suggestedBoxes={suggestedBoxes} />
                     </div>
                     <input
                       type="file"
@@ -78,9 +79,10 @@ export default function Home() {
         <ImageDialog
           imageFile={selectedImage}
           isOpen={isDialogOpen}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => { setDialogOpen(false); setSelectedImage(null); }}
           boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
+          suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
         />
       )}
     </div>

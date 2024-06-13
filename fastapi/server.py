@@ -4,6 +4,7 @@ import base64
 import random
 import string
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 from PIL import Image as PILImage
@@ -11,6 +12,13 @@ from model.owlv2 import OurModel
 from uuid import uuid4
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.on_event("startup")
 async def startup_event():
     app.config_dict = {}
@@ -93,7 +101,6 @@ async def train(images: List[Image]):
     
     await app.fifo_queue.put(task)
     model_id = await future
-
     # You can now access your images with the "images" variable
     # Do something with the images here
     return {
