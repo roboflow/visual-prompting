@@ -73,7 +73,7 @@ export default function Home() {
       body: JSON.stringify({
         model_id: modelId,
         image_contents: imageBase64,
-        confidence_threshold: 0.999
+        confidence_threshold: 0.9998
       }),
     });
 
