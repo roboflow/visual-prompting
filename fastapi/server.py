@@ -1,4 +1,7 @@
 import io
+import numpy as np
+import supervision as sv
+from supervision import Detections
 import asyncio
 import base64
 import random
@@ -57,7 +60,7 @@ class InferResponse(BaseModel):
 
 def to_pil_image(contents):
     image_bytes = io.BytesIO(base64.b64decode(contents.encode('utf-8')))
-    return PILImage.open(image_bytes)
+    return PILImage.open(image_bytes).convert("RGB")
 
 async def fifo_worker():
     print("Starting DB Worker")
@@ -101,6 +104,19 @@ async def train(images: List[Image]):
     future = asyncio.Future()
     async def task(dict_image=dict_image):
         # Do something with the images here
+        for image in dict_image:
+            pil_image = image["pil_contents"]
+            box_dictionary = image["boxes"]
+            w, h = pil_image.size
+            width_ratio = w / max(w, h)
+            height_ratio = h / max(w, h)
+            for box in box_dictionary:
+                bbox = box["bbox"]
+                bbox["w"] *= width_ratio
+                bbox["h"] *= height_ratio
+                bbox["x"] *= width_ratio
+                bbox["y"] *= height_ratio
+
         result = await deploy_model(dict_image)
         future.set_result(result)
     
