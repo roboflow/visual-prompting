@@ -55,7 +55,7 @@ def test_train():
 
 
 def test_infer(model_id):
-    with open("dog.jpeg", "rb") as image_file:
+    with open("dogs.jpeg", "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     body = {
         "model_id": model_id,
@@ -73,17 +73,19 @@ def test_infer(model_id):
     xyxy = []
     confidence = []
 
-    image = np.asarray(Image.open("dog.jpeg"))
+    image = np.asarray(Image.open("dogs.jpeg"))
     sorted(boxes, key=lambda z: -z["confidence"])
     for detection in boxes:
         class_ids.append(0)
-        size = max(image.shape)
-        x1 = (detection['x'] - detection['w'] / 2) * size
-        y1 = (detection['y'] - detection['h'] / 2) * size
-        x2 = (detection['x'] + detection['w'] / 2) * size
-        y2 = (detection['y'] + detection['h'] / 2) * size
-        xyxy.append([x1, y1, x2, y2])
+        height, width, _ = image.shape
         confidence.append(detection['confidence'])
+        print(height, width)
+        detection = detection["bbox"]
+        x1 = (detection['x'] - detection['w'] / 2) * width
+        y1 = (detection['y'] - detection['h'] / 2) * height
+        x2 = (detection['x'] + detection['w'] / 2) * width
+        y2 = (detection['y'] + detection['h'] / 2) * height
+        xyxy.append([x1, y1, x2, y2])
         print(confidence)
 
     xyxy = np.array(xyxy)

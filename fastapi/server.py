@@ -31,6 +31,8 @@ class BBox(BaseModel):
     x: float
     y: float
 
+# [{image_contents: xxx, boxes: [{cls, bbox: {w, h, x, y}, confidence}]}]
+
 class Box(BaseModel):
     cls: str
     bbox: BBox
@@ -73,19 +75,22 @@ async def deploy_model(images):
 async def get_bboxes(model_id, pil_image, confidence):
     model = OurModel.load(model_id)
     boxes = model.infer(pil_image, confidence)
+    w, h = pil_image.size
+    width_ratio = w / max(w, h)
+    height_ratio = h / max(w, h)
     out_boxes = []
     for box in boxes:
         out_boxes.append(Box(
             cls = box["class_name"],
             bbox = BBox(
-                w=box["w"],
-                h=box["h"],
-                x=box["x"],
-                y=box["y"]
+                w=box["w"] / width_ratio,
+                h=box["h"] / height_ratio,
+                x=box["x"] / width_ratio,
+                y=box["y"] / height_ratio,
             ),
             confidence = box["confidence"]
         ))
-    return boxes
+    return out_boxes
 
 @app.post("/train", responses={200: {"model": TrainResponse}})
 async def train(images: List[Image]):
