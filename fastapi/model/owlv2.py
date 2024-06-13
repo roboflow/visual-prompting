@@ -20,7 +20,7 @@ def to_corners(box):
 class OwlVitWrapper:
     def __init__(self, owl_name: str="google/owlv2-base-patch16-ensemble"):
         self.processor = Owlv2Processor.from_pretrained(owl_name)
-        self.model = Owlv2ForObjectDetection.from_pretrained(owl_name).eval()
+        self.model = Owlv2ForObjectDetection.from_pretrained(owl_name).eval().cuda()
         self.image_embed_cache = dict()  # NOTE: this should have a max size
 
     @torch.no_grad()
@@ -30,7 +30,7 @@ class OwlVitWrapper:
         if (image_embeds := self.image_embed_cache.get(image_hash)) is not None:
             return image_hash
 
-        pixel_values = self.processor(images=image, return_tensors="pt").pixel_values
+        pixel_values = self.processor(images=image, return_tensors="pt").pixel_values.cuda()
         image_embeds, _ = self.model.image_embedder(pixel_values=pixel_values)
         batch_size, h, w, dim = image_embeds.shape
         image_features = image_embeds.reshape(batch_size, h * w, dim)
@@ -63,8 +63,10 @@ class OwlVitWrapper:
             
             query_boxes_tensor = torch.tensor(query_boxes, dtype=torch.float, device=image_boxes.device)
             iou, union = box_iou(to_corners(image_boxes), to_corners(query_boxes_tensor)) # 3000, k
-            iou_mask = iou > 0.3
+            iou_mask = iou > 0.45
             valid_objectness = torch.where(iou_mask, objectness.unsqueeze(-1), -1) # 3000, k
+            if torch.all(iou_mask == 0):
+                raise ValueError("No valid embedding found")
             indices = torch.argmax(valid_objectness, dim=0)
             embeds = image_class_embeds[indices]
             query_embeds.append(embeds)
