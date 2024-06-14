@@ -104,21 +104,24 @@ async def train(images: List[Image]):
     future = asyncio.Future()
     async def task(dict_image=dict_image):
         # Do something with the images here
-        for image in dict_image:
-            pil_image = image["pil_contents"]
-            box_dictionary = image["boxes"]
-            w, h = pil_image.size
-            width_ratio = w / max(w, h)
-            height_ratio = h / max(w, h)
-            for box in box_dictionary:
-                bbox = box["bbox"]
-                bbox["w"] *= width_ratio
-                bbox["h"] *= height_ratio
-                bbox["x"] *= width_ratio
-                bbox["y"] *= height_ratio
+        try:
+            for image in dict_image:
+                pil_image = image["pil_contents"]
+                box_dictionary = image["boxes"]
+                w, h = pil_image.size
+                width_ratio = w / max(w, h)
+                height_ratio = h / max(w, h)
+                for box in box_dictionary:
+                    bbox = box["bbox"]
+                    bbox["w"] *= width_ratio
+                    bbox["h"] *= height_ratio
+                    bbox["x"] *= width_ratio
+                    bbox["y"] *= height_ratio
 
-        result = await deploy_model(dict_image)
-        future.set_result(result)
+            result = await deploy_model(dict_image)
+            future.set_result(result)
+        except Exception as error:
+            future.set_exception(error)
     
     await app.fifo_queue.put(task)
     model_id = await future
@@ -137,8 +140,11 @@ async def infer(request: InferenceRequest):
     
     async def task(model_id=request.model_id, pil_image=pil_image, confidence=request.confidence_threshold):
         # Do something with the images here
-        result = await get_bboxes(model_id, pil_image, confidence)
-        future.set_result(result)
+        try:
+            result = await get_bboxes(model_id, pil_image, confidence)
+            future.set_result(result)
+        except Exception as error:
+            future.set_exception(error)
     
     await app.fifo_queue.put(task)
     result = await future

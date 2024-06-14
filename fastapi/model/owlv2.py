@@ -63,7 +63,7 @@ class OwlVitWrapper:
             
             query_boxes_tensor = torch.tensor(query_boxes, dtype=torch.float, device=image_boxes.device)
             iou, union = box_iou(to_corners(image_boxes), to_corners(query_boxes_tensor)) # 3000, k
-            iou_mask = iou > 0.45
+            iou_mask = iou > 0.4
             valid_objectness = torch.where(iou_mask, objectness.unsqueeze(-1), -1) # 3000, k
             if torch.all(iou_mask == 0):
                 raise ValueError("No valid embedding found")
