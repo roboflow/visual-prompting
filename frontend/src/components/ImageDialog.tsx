@@ -53,7 +53,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       const scaleY = (canvas?.height || 0) / imageRef.current.height;
 
       boxes.forEach((box) => {
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = box.negative ? "red": "lime";
         ctx.setLineDash([]);
         ctx.strokeRect(
           box.x * scaleX,
@@ -71,7 +71,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         const x1 = scaledX - scaledWidth / 2;
         const y1 = scaledY - scaledHeight / 2;
 
-        ctx.strokeStyle = "magenta";
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "lime";
         ctx.setLineDash([2, 2]);
         ctx.strokeRect(x1, y1, scaledWidth, scaledHeight);
       });
