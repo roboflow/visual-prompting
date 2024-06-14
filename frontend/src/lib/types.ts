@@ -3,7 +3,8 @@ export type Box = {
     x: number,
     y: number,
     width: number,
-    height: number
+    height: number,
+    negative: boolean
 }
   
 export type Datum = {
