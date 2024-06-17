@@ -93,7 +93,7 @@ export default function Home() {
       height: box.bbox.h * imageHeight,
     }));
 
-    const filteredBoxes = newSuggestedBoxes.filter(obj => obj.class !== 'negative');
+    const filteredBoxes: Box[] = newSuggestedBoxes.filter((obj: Box) => obj.class !== 'negative');
 
 
     setSuggestedBoxes({
