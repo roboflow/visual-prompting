@@ -84,7 +84,7 @@ export default function Home() {
     const inferData = await inferResponse.json();
 
     const newSuggestedBoxes = inferData.boxes.map((box: any) => ({
-      class: box.cls,
+      cls: box.cls,
       x: box.bbox.x * imageWidth,
       y: box.bbox.y * imageHeight,
       width: box.bbox.w * imageWidth,
