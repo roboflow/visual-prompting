@@ -76,7 +76,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       const scaleY = canvas.height / imageRef.current.height;
 
       boxes.forEach((box) => {
-        ctx.strokeStyle = box.cls == "negative" ? "red" : "lime";
+        const classIndex = classes.indexOf(box.cls || "");
+        ctx.strokeStyle = classColors[classIndex % classColors.length];
         ctx.setLineDash([]);
         ctx.strokeRect(
           box.x * scaleX,
@@ -100,7 +101,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         ctx.strokeRect(x1, y1, scaledWidth, scaledHeight);
       });
     }
-  }, [boxes, imageRef, suggestedBoxes]);
+  }, [boxes, imageRef, suggestedBoxes, classes]);
 
   useEffect(() => {
     if (canvasSize.width > 0 && canvasSize.height > 0) {
@@ -190,7 +191,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         );
         renderBoxes();
         if (currentBox) {
-          ctx.strokeStyle = currentClass == "negative" ? "red" : "lime";
+          const classIndex = classes.indexOf(currentClass);
+          ctx.strokeStyle = classColors[classIndex % classColors.length];
           ctx.strokeRect(currentBox.x, currentBox.y, currentBox.width, currentBox.height);
         }
       }
