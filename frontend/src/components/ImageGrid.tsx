@@ -21,18 +21,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
       const ctx = canvas.getContext('2d');
       if (ctx && boxes) {
         const { naturalWidth, naturalHeight } = imgElement;
-        const { width: displayWidth, height: displayHeight } = canvas;
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
 
-        const scaleX = displayWidth / naturalWidth;
-        const scaleY = displayHeight / naturalHeight;
-        const scale = Math.max(scaleX, scaleY);
-
-        const offsetX = (displayWidth - naturalWidth * scale) / 2;
-        const offsetY = (displayHeight - naturalHeight * scale) / 2;
-
-        ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+        // Set canvas dimensions to match the image's natural dimensions
+        canvas.width = naturalWidth;
+        canvas.height = naturalHeight;
 
         boxes.forEach(box => {
           const x = box.x - box.width / 2;
@@ -40,11 +32,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
 
           ctx.strokeStyle = color;
           ctx.setLineDash(style === "dashed" ? [2, 2] : []);
-          ctx.lineWidth = 2 / scale;
+          ctx.lineWidth = 2;
           ctx.strokeRect(x, y, box.width, box.height);
         });
-
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
     }
   };
@@ -66,7 +56,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
           />
           <canvas
             ref={el => { canvasRefs.current[image.name] = el }}
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none object-cover"
           />
         </div>
       ))}
