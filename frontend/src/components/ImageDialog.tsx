@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 
-const classColors = [
+export const classColors = [
   "red",
   "lime",
   "orange",

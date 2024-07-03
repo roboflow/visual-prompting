@@ -222,6 +222,7 @@ export default function Home() {
                   <div>
                     <div className="mb-5">
                       <ImageGrid
+                        classes={classes}
                         images={images}
                         onImageClick={(image) => {
                           setSelectedImage(image);

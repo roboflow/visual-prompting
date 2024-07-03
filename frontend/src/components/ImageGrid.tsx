@@ -2,19 +2,21 @@
 
 import React, { useRef } from 'react'
 import { Box } from '@/lib/types'
+import { classColors } from './ImageDialog'
 
 interface ImageGridProps {
   boxes: { [key: string]: Box[] }
+  classes: string[]
   images: File[]
   onImageClick: (image: File) => void
   suggestedBoxes: { [key: string]: Box[] }
 }
 
-const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, suggestedBoxes }) => {
+const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageClick, suggestedBoxes }) => {
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const imageRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
 
-  const drawBoxes = (imageName: string, boxes: Box[], style: string = "solid", color: string = "red") => {
+  const drawBoxes = (imageName: string, boxes: Box[], style: string = "solid") => {
     const canvas = canvasRefs.current[imageName];
     const imgElement = imageRefs.current[imageName];
     if (canvas && imgElement) {
@@ -30,7 +32,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
           const x = box.x - box.width / 2;
           const y = box.y - box.height / 2;
 
-          ctx.strokeStyle = color;
+          const classIndex = box.cls ? classes.indexOf(box.cls) : 0;
+          ctx.strokeStyle = classColors[classIndex % classColors.length];
           ctx.setLineDash(style === "dashed" ? [2, 2] : []);
           ctx.lineWidth = 2;
           ctx.strokeRect(x, y, box.width, box.height);
@@ -50,8 +53,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
             className="absolute inset-0 w-full h-full object-cover"
             onLoad={(event) => {
               URL.revokeObjectURL((event.target as HTMLImageElement).src);
-              drawBoxes(image.name, boxes[image.name], "solid", "red");
-              drawBoxes(image.name, suggestedBoxes[image.name], "dashed", "green");
+              drawBoxes(image.name, boxes[image.name], "solid");
+              drawBoxes(image.name, suggestedBoxes[image.name], "dashed");
             }}
           />
           <canvas
