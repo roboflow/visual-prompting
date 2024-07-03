@@ -19,7 +19,7 @@ const toBase64 = (file: File) =>
 
 function normalizeBoxes(boxes: Box[], imageWidth: number, imageHeight: number) {
   return boxes.map((box) => ({
-    cls: box.negative ? "negative" : "positive",
+    cls: box.cls,
     bbox: {
       x: (box.x + box.width / 2) / imageWidth,
       y: (box.y + box.height / 2) / imageHeight,
@@ -34,7 +34,6 @@ export default function Home() {
   const [images, setImages] = useState<File[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const [isLabelingNegative, setLabelingNegative] = useState(false);
   const [userBoxes, setUserBoxes] = useState<{ [key: string]: Box[] }>({});
   const [suggestedBoxes, setSuggestedBoxes] = useState<{
     [key: string]: Box[];
@@ -92,8 +91,7 @@ export default function Home() {
       height: box.bbox.h * imageHeight,
     }));
 
-    const filteredBoxes: Box[] = newSuggestedBoxes.filter((obj: Box) => obj.class !== 'negative');
-
+    const filteredBoxes: Box[] = newSuggestedBoxes.filter((obj: Box) => obj.cls !== 'negative');
 
     setSuggestedBoxes({
       ...suggestedBoxes,
@@ -207,13 +205,10 @@ export default function Home() {
           onClose={() => {
             setDialogOpen(false);
             setSelectedImage(null);
-            setLabelingNegative(false);
           }}
-          isLabelingNegative={isLabelingNegative}
           boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
           suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
-          setLabelingNegative={setLabelingNegative}
         />
       )}
     </div>

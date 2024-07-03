@@ -1,30 +1,37 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 import { Box } from "@/lib/types";
+import { Button } from "./ui/button";
+
+const classColors = [
+  "red",
+  "lime",
+  "blue",
+  "purple",
+  "orange",
+  "yellow",
+  "cyan",
+  "magenta",
+]
 
 interface ImageDialogProps {
   imageFile: File;
   isOpen: boolean;
   onClose: () => void;
-  isLabelingNegative: boolean;
   boxes: Box[];
   onAddBox: (box: Box, imageWidth: number, imageHeight: number) => void;
   suggestedBoxes: Box[];
-  setLabelingNegative: (value: boolean) => void;
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({
   imageFile,
   isOpen,
   onClose,
-  isLabelingNegative,
   boxes,
   onAddBox,
   suggestedBoxes,
-  setLabelingNegative,
 }) => {
   const [imageUrl, setImageUrl] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,6 +40,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [currentClass, setCurrentClass] = useState("positive");
+  const [classes, setClasses] = useState(["negative", "positive"]);
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
 
@@ -67,7 +76,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       const scaleY = canvas.height / imageRef.current.height;
 
       boxes.forEach((box) => {
-        ctx.strokeStyle = box.negative ? "red" : "lime";
+        ctx.strokeStyle = box.cls == "negative" ? "red" : "lime";
         ctx.setLineDash([]);
         ctx.strokeRect(
           box.x * scaleX,
@@ -163,11 +172,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       const width = currentX - startPos.x;
       const height = currentY - startPos.y;
       setCurrentBox({
+        cls: currentClass,
         x: Math.min(startPos.x, currentX),
         y: Math.min(startPos.y, currentY),
         width: Math.abs(width),
         height: Math.abs(height),
-        negative: isLabelingNegative
       });
 
       if (ctx && imageRef.current) {
@@ -181,7 +190,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         );
         renderBoxes();
         if (currentBox) {
-          ctx.strokeStyle = isLabelingNegative ? "red" : "lime";
+          ctx.strokeStyle = currentClass == "negative" ? "red" : "lime";
           ctx.strokeRect(currentBox.x, currentBox.y, currentBox.width, currentBox.height);
         }
       }
@@ -204,11 +213,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
 
       // Adjust box dimensions to be relative to the image size
       const adjustedBox = {
+        cls: currentClass,
         x: x * scaleX,
         y: y * scaleY,
         width: Math.abs(currentBox.width) * scaleX,
         height: Math.abs(currentBox.height) * scaleY,
-        negative: isLabelingNegative
       };
 
       onAddBox(adjustedBox, imgWidth, imgHeight);
@@ -220,16 +229,19 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
-        <Button
-          type="button"
-          onClick={() => {
-            setLabelingNegative(!isLabelingNegative);
-          }}
-        >
-          {isLabelingNegative
-            ? "Label Positives (Currently Labeling Negatives)"
-            : "Label Negatives (Currently Labeling Positives)"}
-        </Button>
+        <div className="flex space-x-2">
+          {classes.map((cls, index) => (
+            <Button
+              key={cls}
+              variant={currentClass === cls ? "default" : "outline"}
+              className={"flex items-center"}
+              onClick={() => setCurrentClass(cls)}
+            >
+              <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: classColors[index % classColors.length] }}></span>
+              {cls}
+            </Button>
+          ))}
+        </div>
         <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
           <canvas
             ref={canvasRef}
