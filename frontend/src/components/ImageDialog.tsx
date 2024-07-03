@@ -16,6 +16,8 @@ const classColors = [
 ]
 
 interface ImageDialogProps {
+  classes: string[];
+  setClasses: (classes: string[]) => void;
   imageFile: File;
   isOpen: boolean;
   onClose: () => void;
@@ -25,6 +27,8 @@ interface ImageDialogProps {
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({
+  classes,
+  setClasses,
   imageFile,
   isOpen,
   onClose,
@@ -40,7 +44,6 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [currentClass, setCurrentClass] = useState("positive");
-  const [classes, setClasses] = useState(["negative", "positive"]);
   const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);

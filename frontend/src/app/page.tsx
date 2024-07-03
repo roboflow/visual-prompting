@@ -38,6 +38,7 @@ export default function Home() {
   const [suggestedBoxes, setSuggestedBoxes] = useState<{
     [key: string]: Box[];
   }>({});
+  const [classes, setClasses] = useState(["negative", "positive"]);
 
   async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
     if (!selectedImage) {
@@ -200,6 +201,8 @@ export default function Home() {
       </main>
       {selectedImage && (
         <ImageDialog
+          classes={classes}
+          setClasses={setClasses}
           imageFile={selectedImage}
           isOpen={isDialogOpen}
           onClose={() => {
