@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Dialog, DialogContent } from "./ui/dialog";
-import { useResizeObserver } from "@/hooks/useResizeObserver";
-
 import { Box } from "@/lib/types";
 import { Button } from "./ui/button";
+import { Dialog, DialogContent } from "./ui/dialog";
+import { Input } from "./ui/input"; // Add this import
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 const classColors = [
   "red",
   "lime",
-  "blue",
-  "purple",
   "orange",
-  "yellow",
-  "cyan",
   "magenta",
+  "blue",
+  "pink",
+  "cyan",
 ]
 
 interface ImageDialogProps {
@@ -42,6 +41,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [currentClass, setCurrentClass] = useState("positive");
   const [classes, setClasses] = useState(["negative", "positive"]);
+  const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
 
@@ -226,10 +226,18 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     setIsDrawing(false);
   };
 
+  const handleAddClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newClass && !classes.includes(newClass)) {
+      setClasses([...classes, newClass]);
+      setNewClass("");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 items-center">
           {classes.map((cls, index) => (
             <Button
               key={cls}
@@ -241,6 +249,16 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               {cls}
             </Button>
           ))}
+          <form onSubmit={handleAddClass} className="flex space-x-2">
+            <Input
+              type="text"
+              value={newClass}
+              onChange={(e) => setNewClass(e.target.value)}
+              placeholder="Add new class"
+              className="w-32 ml-5"
+            />
+            <Button type="submit" variant="outline">Add</Button>
+          </form>
         </div>
         <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
           <canvas
