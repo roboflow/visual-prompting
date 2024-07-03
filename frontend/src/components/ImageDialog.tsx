@@ -48,7 +48,6 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
 
-  // Add this new useEffect hook
   useEffect(() => {
     if (containerSize && imageRef.current) {
       const aspectRatio = imageRef.current.width / imageRef.current.height;

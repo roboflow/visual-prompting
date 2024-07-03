@@ -46,6 +46,7 @@ export default function Home() {
     [key: string]: Box[];
   }>({});
   const [classes, setClasses] = useState(["negative", "positive"]);
+  const [isInferring, setIsInferring] = useState(false);
 
   async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
     if (!selectedImage) {
@@ -110,6 +111,7 @@ export default function Home() {
   async function handleDialogClose() {
     setDialogOpen(false);
     setSelectedImage(null);
+    setIsInferring(true);
 
     // Train model on all labeled images
     const labeledImages = Object.entries(userBoxes).filter(([_, boxes]) => boxes.length > 0);
@@ -167,6 +169,7 @@ export default function Home() {
     }
 
     setSuggestedBoxes(newSuggestedBoxes);
+    setIsInferring(false);
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -217,6 +220,12 @@ export default function Home() {
               predictions on the images and learn from your examples.
             </p>
             <div className="bg-white dark:bg-gray-950 rounded-lg p-6 shadow">
+              {isInferring && (
+                <div className="flex justify-center items-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+                  <span className="ml-2">Labeling all images...</span>
+                </div>
+              )}
               <form className="space-y-6">
                 <div>
                   <div>
