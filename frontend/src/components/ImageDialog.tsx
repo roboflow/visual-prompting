@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Dialog, DialogContent } from "./ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "./ui/dialog";
+import { useResizeObserver } from "@/hooks/useResizeObserver";
 
 import { Box } from "@/lib/types";
 
@@ -32,28 +33,42 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [returnedImage, setReturnedImage] = useState<string | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerSize = useResizeObserver(containerRef);
+
+  // Add this new useEffect hook
+  useEffect(() => {
+    if (containerSize && imageRef.current) {
+      const aspectRatio = imageRef.current.width / imageRef.current.height;
+      let newWidth = containerSize.width;
+      let newHeight = containerSize.height;
+
+      if (aspectRatio > containerSize.width / containerSize.height) {
+        newHeight = containerSize.width / aspectRatio;
+      } else {
+        newWidth = containerSize.height * aspectRatio;
+      }
+
+      setCanvasSize({ width: newWidth, height: newHeight });
+    }
+  }, [containerSize]);
 
   const renderBoxes = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (ctx && imageRef.current) {
-      ctx.clearRect(0, 0, canvas?.width || 0, canvas?.height || 0);
+    if (ctx && imageRef.current && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw the image on the canvas
-      ctx.drawImage(
-        imageRef.current,
-        0,
-        0,
-        canvas?.width || 0,
-        canvas?.height || 0
-      );
+      ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
 
       // Calculate scale ratios
-      const scaleX = (canvas?.width || 0) / imageRef.current.width;
-      const scaleY = (canvas?.height || 0) / imageRef.current.height;
+      const scaleX = canvas.width / imageRef.current.width;
+      const scaleY = canvas.height / imageRef.current.height;
 
       boxes.forEach((box) => {
-        ctx.strokeStyle = box.negative ? "red": "lime";
+        ctx.strokeStyle = box.negative ? "red" : "lime";
         ctx.setLineDash([]);
         ctx.strokeRect(
           box.x * scaleX,
@@ -80,15 +95,40 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   }, [boxes, imageRef, suggestedBoxes]);
 
   useEffect(() => {
-    if (imageFile) {
+    if (canvasSize.width > 0 && canvasSize.height > 0) {
+      renderBoxes();
+    }
+  }, [canvasSize, renderBoxes]);
+
+
+  useEffect(() => {
+    if (imageFile && containerSize) {
       const url = URL.createObjectURL(imageFile);
       setImageUrl(url);
+
+      const img = new Image();
+      img.onload = () => {
+        imageRef.current = img;
+        const aspectRatio = img.width / img.height;
+        let newWidth = containerSize.width;
+        let newHeight = containerSize.height;
+
+        if (aspectRatio > containerSize.width / containerSize.height) {
+          newHeight = containerSize.width / aspectRatio;
+        } else {
+          newWidth = containerSize.height * aspectRatio;
+        }
+
+        setCanvasSize({ width: newWidth, height: newHeight });
+        renderBoxes();
+      };
+      img.src = url;
 
       return () => {
         URL.revokeObjectURL(url);
       };
     }
-  }, [imageFile]);
+  }, [imageFile, containerSize, renderBoxes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -175,7 +215,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="min-w-[800px] min-h-[600px]">
+      <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
         <Button
           type="button"
           onClick={() => {
@@ -186,16 +226,18 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             ? "Label Positives (Currently Labeling Negatives)"
             : "Label Negatives (Currently Labeling Positives)"}
         </Button>
-        <canvas
-          className="mt-5"
-          ref={canvasRef}
-          id="imageCanvas"
-          width="700"
-          height="600"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-        ></canvas>
+        <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
+          <canvas
+            ref={canvasRef}
+            id="imageCanvas"
+            width={canvasSize.width}
+            height={canvasSize.height}
+            className="max-w-full max-h-full mx-auto"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          ></canvas>
+        </div>
       </DialogContent>
     </Dialog>
   );
