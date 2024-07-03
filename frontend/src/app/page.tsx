@@ -1,11 +1,10 @@
 "use client";
 
+import ImageDialog from "@/components/ImageDialog";
 import ImageGrid from "@/components/ImageGrid";
+import { Box } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import ImageDialog from "@/components/ImageDialog";
-
-import { Box, Datum } from "@/lib/types";
 
 const API_ROOT = "https://api.owlvit.com";
 
@@ -29,6 +28,14 @@ function normalizeBoxes(boxes: Box[], imageWidth: number, imageHeight: number) {
     confidence: 0.5,
   }));
 }
+
+const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
@@ -98,6 +105,68 @@ export default function Home() {
       ...suggestedBoxes,
       [selectedImage.name]: filteredBoxes,
     });
+  }
+
+  async function handleDialogClose() {
+    setDialogOpen(false);
+    setSelectedImage(null);
+
+    // Train model on all labeled images
+    const labeledImages = Object.entries(userBoxes).filter(([_, boxes]) => boxes.length > 0);
+    if (labeledImages.length === 0) return;
+
+    const trainingData = await Promise.all(
+      labeledImages.map(async ([imageName, boxes]) => {
+        const image = images.find(img => img.name === imageName);
+        if (!image) return null;
+        const imageBase64 = await toBase64(image);
+        const { width, height } = await getImageDimensions(image);
+        return {
+          image_contents: imageBase64.replace(/^data:image\/(png|jpeg);base64,/, ""),
+          boxes: normalizeBoxes(boxes, width, height),
+        };
+      })
+    );
+
+    const trainResponse = await fetch(`${API_ROOT}/train`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(trainingData.filter(Boolean)),
+    });
+
+    const trainData = await trainResponse.json();
+    const modelId = trainData.model_id;
+
+    // Run inference on all images
+    const newSuggestedBoxes = { ...suggestedBoxes };
+    for (const image of images) {
+      const imageBase64 = await toBase64(image);
+      const { width, height } = await getImageDimensions(image);
+      const inferResponse = await fetch(`${API_ROOT}/infer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model_id: modelId,
+          image_contents: imageBase64.replace(/^data:image\/(png|jpeg);base64,/, ""),
+          confidence_threshold: 0.9993,
+        }),
+      });
+
+      const inferData = await inferResponse.json();
+      const inferredBoxes = inferData.boxes
+        .filter((box: any) => box.cls !== 'negative')
+        .map((box: any) => ({
+          cls: box.cls,
+          x: box.bbox.x * width,
+          y: box.bbox.y * height,
+          width: box.bbox.w * width,
+          height: box.bbox.h * height,
+        }));
+
+      newSuggestedBoxes[image.name] = inferredBoxes;
+    }
+
+    setSuggestedBoxes(newSuggestedBoxes);
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -205,10 +274,7 @@ export default function Home() {
           setClasses={setClasses}
           imageFile={selectedImage}
           isOpen={isDialogOpen}
-          onClose={() => {
-            setDialogOpen(false);
-            setSelectedImage(null);
-          }}
+          onClose={handleDialogClose}
           boxes={userBoxes[selectedImage.name] || []}
           onAddBox={onBoxAdded}
           suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
