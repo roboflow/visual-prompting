@@ -33,8 +33,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
         const offsetY = (displayHeight - naturalHeight * scale) / 2;
 
         boxes.forEach(box => {
-          const scaledX = box.x * scale + offsetX;
-          const scaledY = box.y * scale + offsetY;
+          const scaledX = (box.x - box.width / 2) * scale + offsetX;
+          const scaledY = (box.y - box.height / 2) * scale + offsetY;
           const scaledWidth = box.width * scale;
           const scaledHeight = box.height * scale;
 
