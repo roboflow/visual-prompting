@@ -158,13 +158,15 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (rect && canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
-      const currentWidth = e.clientX - rect.left - startPos.x;
-      const currentHeight = e.clientY - rect.top - startPos.y;
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
+      const width = currentX - startPos.x;
+      const height = currentY - startPos.y;
       setCurrentBox({
-        x: startPos.x,
-        y: startPos.y,
-        width: currentWidth,
-        height: currentHeight,
+        x: Math.min(startPos.x, currentX),
+        y: Math.min(startPos.y, currentY),
+        width: Math.abs(width),
+        height: Math.abs(height),
         negative: isLabelingNegative
       });
 
@@ -179,8 +181,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         );
         renderBoxes();
         if (currentBox) {
-          ctx.strokeStyle = "red";
-          ctx.strokeRect(startPos.x, startPos.y, currentWidth, currentHeight);
+          ctx.strokeStyle = isLabelingNegative ? "red" : "lime";
+          ctx.strokeRect(currentBox.x, currentBox.y, currentBox.width, currentBox.height);
         }
       }
     }
@@ -190,17 +192,20 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     if (currentBox && imageRef.current) {
       const imgWidth = imageRef.current.width;
       const imgHeight = imageRef.current.height;
-      const canvasWidth = canvasRef.current?.width || 1; // Avoid division by zero
+      const canvasWidth = canvasRef.current?.width || 1;
       const canvasHeight = canvasRef.current?.height || 1;
 
-      // Calculate the scale ratios
       const scaleX = imgWidth / canvasWidth;
       const scaleY = imgHeight / canvasHeight;
 
+      // Calculate the correct x and y coordinates
+      const x = Math.min(currentBox.x, currentBox.x + currentBox.width);
+      const y = Math.min(currentBox.y, currentBox.y + currentBox.height);
+
       // Adjust box dimensions to be relative to the image size
       const adjustedBox = {
-        x: currentBox.x * scaleX,
-        y: currentBox.y * scaleY,
+        x: x * scaleX,
+        y: y * scaleY,
         width: Math.abs(currentBox.width) * scaleX,
         height: Math.abs(currentBox.height) * scaleY,
         negative: isLabelingNegative
