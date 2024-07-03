@@ -32,7 +32,6 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
-  const [returnedImage, setReturnedImage] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);

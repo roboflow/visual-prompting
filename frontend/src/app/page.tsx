@@ -39,7 +39,6 @@ export default function Home() {
   const [suggestedBoxes, setSuggestedBoxes] = useState<{
     [key: string]: Box[];
   }>({});
-  const [returnedImage, setReturnedImage] = useState<string | null>(null);
 
   async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
     if (!selectedImage) {
@@ -100,7 +99,6 @@ export default function Home() {
       ...suggestedBoxes,
       [selectedImage.name]: filteredBoxes,
     });
-    // setReturnedImage(`data:image/jpeg;base64,${trainData.image}`);
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -197,7 +195,6 @@ export default function Home() {
                 >
                   Add Images
                 </Button>
-                {returnedImage && <img src={returnedImage} />}
               </form>
             </div>
           </section>
