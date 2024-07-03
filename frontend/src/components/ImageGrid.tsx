@@ -12,36 +12,37 @@ interface ImageGridProps {
 
 const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, suggestedBoxes }) => {
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
+  const imageRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
 
   const drawBoxes = (imageName: string, boxes: Box[], style: string = "solid", color: string = "red") => {
     const canvas = canvasRefs.current[imageName];
-    if (canvas) {
+    const imgElement = imageRefs.current[imageName];
+    if (canvas && imgElement) {
       const ctx = canvas.getContext('2d');
       if (ctx && boxes) {
-        const imgElement = document.querySelector(`img[alt="image-${imageName}"]`) as HTMLImageElement;
-        if (imgElement) {
-          const { naturalWidth, naturalHeight } = imgElement;
-          const { width: canvasWidth, height: canvasHeight } = canvas;
+        const { naturalWidth, naturalHeight } = imgElement;
+        const { width: displayWidth, height: displayHeight } = imgElement.getBoundingClientRect();
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
 
-          const xRatio = canvasWidth / naturalWidth;
-          const yRatio = canvasHeight / naturalHeight;
+        const scaleX = displayWidth / naturalWidth;
+        const scaleY = displayHeight / naturalHeight;
+        const scale = Math.min(scaleX, scaleY);
 
-          boxes.forEach(box => {
-            const scaledX = box.x * xRatio;
-            const scaledY = box.y * yRatio;
-            const scaledWidth = box.width * xRatio;
-            const scaledHeight = box.height * yRatio;
+        const offsetX = (displayWidth - naturalWidth * scale) / 2;
+        const offsetY = (displayHeight - naturalHeight * scale) / 2;
 
-            ctx.strokeStyle = color;
-            if (style === "dashed") {
-              ctx.setLineDash([2, 2])
-            } else {
-              ctx.setLineDash([])
-            }
-            ctx.lineWidth = 2;
-            ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
-          });
-        }
+        boxes.forEach(box => {
+          const scaledX = box.x * scale + offsetX;
+          const scaledY = box.y * scale + offsetY;
+          const scaledWidth = box.width * scale;
+          const scaledHeight = box.height * scale;
+
+          ctx.strokeStyle = color;
+          ctx.setLineDash(style === "dashed" ? [2, 2] : []);
+          ctx.lineWidth = 2;
+          ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+        });
       }
     }
   };
@@ -49,21 +50,24 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, onImageClick, sugg
   return (
     <div className="grid grid-cols-3 gap-4">
       {images.map((image) => (
-        <div key={image.name} className="relative w-full" onClick={() => onImageClick(image)}>
-          <canvas
-            ref={el => { canvasRefs.current[image.name] = el }}
-            className="absolute top-0 left-0 w-full h-full pointer-events-none"
-          />
-          <img
-            src={URL.createObjectURL(image)}
-            alt={`image-${image.name}`}
-            className="w-full h-auto"
-            onLoad={(event) => {
-              URL.revokeObjectURL((event.target as HTMLImageElement).src);
-              drawBoxes(image.name, boxes[image.name], "solid", "red");
-              drawBoxes(image.name, suggestedBoxes[image.name], "dashed", "green");
-            }}
-          />
+        <div key={image.name} className="relative aspect-square" onClick={() => onImageClick(image)}>
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+            <img
+              ref={el => { imageRefs.current[image.name] = el }}
+              src={URL.createObjectURL(image)}
+              alt={`image-${image.name}`}
+              className="max-w-full max-h-full object-contain"
+              onLoad={(event) => {
+                URL.revokeObjectURL((event.target as HTMLImageElement).src);
+                drawBoxes(image.name, boxes[image.name], "solid", "red");
+                drawBoxes(image.name, suggestedBoxes[image.name], "dashed", "green");
+              }}
+            />
+            <canvas
+              ref={el => { canvasRefs.current[image.name] = el }}
+              className="absolute top-0 left-0 w-full h-full pointer-events-none"
+            />
+          </div>
         </div>
       ))}
     </div>
