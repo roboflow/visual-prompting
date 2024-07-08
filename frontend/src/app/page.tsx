@@ -29,7 +29,9 @@ function normalizeBoxes(boxes: Box[], imageWidth: number, imageHeight: number) {
   }));
 }
 
-const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+const getImageDimensions = (
+  file: File,
+): Promise<{ width: number; height: number }> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve({ width: img.width, height: img.height });
@@ -100,7 +102,9 @@ export default function Home() {
       height: box.bbox.h * imageHeight,
     }));
 
-    const filteredBoxes: Box[] = newSuggestedBoxes.filter((obj: Box) => obj.cls !== 'negative');
+    const filteredBoxes: Box[] = newSuggestedBoxes.filter(
+      (obj: Box) => obj.cls !== "negative",
+    );
 
     setSuggestedBoxes({
       ...suggestedBoxes,
@@ -114,20 +118,25 @@ export default function Home() {
     setIsInferring(true);
 
     // Train model on all labeled images
-    const labeledImages = Object.entries(userBoxes).filter(([_, boxes]) => boxes.length > 0);
+    const labeledImages = Object.entries(userBoxes).filter(
+      ([_, boxes]) => boxes.length > 0,
+    );
     if (labeledImages.length === 0) return;
 
     const trainingData = await Promise.all(
       labeledImages.map(async ([imageName, boxes]) => {
-        const image = images.find(img => img.name === imageName);
+        const image = images.find((img) => img.name === imageName);
         if (!image) return null;
         const imageBase64 = await toBase64(image);
         const { width, height } = await getImageDimensions(image);
         return {
-          image_contents: imageBase64.replace(/^data:image\/(png|jpeg);base64,/, ""),
+          image_contents: imageBase64.replace(
+            /^data:image\/(png|jpeg);base64,/,
+            "",
+          ),
           boxes: normalizeBoxes(boxes, width, height),
         };
-      })
+      }),
     );
 
     const trainResponse = await fetch(`${API_ROOT}/train`, {
@@ -149,14 +158,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model_id: modelId,
-          image_contents: imageBase64.replace(/^data:image\/(png|jpeg);base64,/, ""),
+          image_contents: imageBase64.replace(
+            /^data:image\/(png|jpeg);base64,/,
+            "",
+          ),
           confidence_threshold: 0.9993,
         }),
       });
 
       const inferData = await inferResponse.json();
       const inferredBoxes = inferData.boxes
-        .filter((box: any) => box.cls !== 'negative')
+        .filter((box: any) => box.cls !== "negative")
         .map((box: any) => ({
           cls: box.cls,
           x: box.bbox.x * width,

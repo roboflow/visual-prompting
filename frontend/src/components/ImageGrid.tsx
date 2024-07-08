@@ -1,26 +1,36 @@
-"use client"
+"use client";
 
-import React, { useRef } from 'react'
-import { Box } from '@/lib/types'
-import { classColors } from './ImageDialog'
+import React, { useRef } from "react";
+import { Box } from "@/lib/types";
+import { classColors } from "./ImageDialog";
 
 interface ImageGridProps {
-  boxes: { [key: string]: Box[] }
-  classes: string[]
-  images: File[]
-  onImageClick: (image: File) => void
-  suggestedBoxes: { [key: string]: Box[] }
+  boxes: { [key: string]: Box[] };
+  classes: string[];
+  images: File[];
+  onImageClick: (image: File) => void;
+  suggestedBoxes: { [key: string]: Box[] };
 }
 
-const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageClick, suggestedBoxes }) => {
+const ImageGrid: React.FC<ImageGridProps> = ({
+  images,
+  boxes,
+  classes,
+  onImageClick,
+  suggestedBoxes,
+}) => {
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const imageRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
 
-  const drawBoxes = (imageName: string, boxes: Box[], style: string = "solid") => {
+  const drawBoxes = (
+    imageName: string,
+    boxes: Box[],
+    style: string = "solid",
+  ) => {
     const canvas = canvasRefs.current[imageName];
     const imgElement = imageRefs.current[imageName];
     if (canvas && imgElement) {
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (ctx && boxes) {
         const { naturalWidth, naturalHeight } = imgElement;
 
@@ -28,7 +38,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageCl
         canvas.width = naturalWidth;
         canvas.height = naturalHeight;
 
-        boxes.forEach(box => {
+        boxes.forEach((box) => {
           const x = box.x - box.width / 2;
           const y = box.y - box.height / 2;
 
@@ -45,9 +55,15 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageCl
   return (
     <div className="grid grid-cols-3 gap-2">
       {images.map((image) => (
-        <div key={image.name} className="relative aspect-square overflow-hidden rounded-sm" onClick={() => onImageClick(image)}>
+        <div
+          key={image.name}
+          className="relative aspect-square overflow-hidden rounded-sm"
+          onClick={() => onImageClick(image)}
+        >
           <img
-            ref={el => { imageRefs.current[image.name] = el }}
+            ref={(el) => {
+              imageRefs.current[image.name] = el;
+            }}
             src={URL.createObjectURL(image)}
             alt={`image-${image.name}`}
             className="absolute inset-0 w-full h-full object-cover"
@@ -58,7 +74,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageCl
             }}
           />
           <canvas
-            ref={el => { canvasRefs.current[image.name] = el }}
+            ref={(el) => {
+              canvasRefs.current[image.name] = el;
+            }}
             className="absolute inset-0 w-full h-full pointer-events-none object-cover"
           />
         </div>
@@ -67,4 +85,4 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, boxes, classes, onImageCl
   );
 };
 
-export default ImageGrid
+export default ImageGrid;
