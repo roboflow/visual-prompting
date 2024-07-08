@@ -48,6 +48,10 @@ export default function Home() {
     [key: string]: Box[];
   }>({});
   const [classes, setClasses] = useState(["negative", "positive"]);
+  const filterPositive = classes.length > 2;
+  const classesToShow = filterPositive
+    ? classes.filter((c) => c !== "positive")
+    : classes;
   const [isInferring, setIsInferring] = useState(false);
 
   async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
@@ -243,12 +247,13 @@ export default function Home() {
                   <div>
                     <div className="mb-5">
                       <ImageGrid
-                        classes={classes}
+                        classes={classesToShow}
                         images={images}
                         onImageClick={(image) => {
                           setSelectedImage(image);
                           setDialogOpen(true);
                         }}
+                        filterPositive={filterPositive}
                         boxes={userBoxes}
                         suggestedBoxes={suggestedBoxes}
                       />
@@ -292,12 +297,14 @@ export default function Home() {
       </main>
       {selectedImage && (
         <ImageDialog
-          classes={classes}
+          classes={classesToShow}
           setClasses={setClasses}
           imageFile={selectedImage}
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
-          boxes={userBoxes[selectedImage.name] || []}
+          boxes={(userBoxes[selectedImage.name] || []).filter((box) =>
+            filterPositive ? box.cls !== "positive" : true,
+          )}
           onAddBox={onBoxAdded}
           suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
         />

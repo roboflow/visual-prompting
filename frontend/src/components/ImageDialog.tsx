@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  Fragment,
+} from "react";
 import { Box } from "@/lib/types";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export const classColors = [
   "red",
@@ -17,7 +24,7 @@ export const classColors = [
 
 interface ImageDialogProps {
   classes: string[];
-  setClasses: (classes: string[]) => void;
+  setClasses: React.Dispatch<React.SetStateAction<string[]>>;
   imageFile: File;
   isOpen: boolean;
   onClose: () => void;
@@ -43,10 +50,16 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-  const [currentClass, setCurrentClass] = useState("positive");
+  const [currentClass, setCurrentClass] = useState(classes[1]);
   const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
+
+  useEffect(() => {
+    if (!classes.includes(currentClass)) {
+      setCurrentClass(classes[1]);
+    }
+  }, [classes]);
 
   useEffect(() => {
     if (containerSize && imageRef.current) {
@@ -238,7 +251,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const handleAddClass = (e: React.FormEvent) => {
     e.preventDefault();
     if (newClass && !classes.includes(newClass)) {
-      setClasses([...classes, newClass]);
+      setClasses((_c) => [..._c, newClass]);
       setNewClass("");
     }
   };
