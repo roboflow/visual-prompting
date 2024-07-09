@@ -11,6 +11,7 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { renderBoxes } from "@/lib/renderBoxes";
 
 export const classColors = [
   "red",
@@ -77,53 +78,23 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     }
   }, [containerSize]);
 
-  const renderBoxes = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (ctx && imageRef.current && canvas) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the image on the canvas
-      ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
-
-      // Calculate scale ratios
-      const scaleX = canvas.width / imageRef.current.width;
-      const scaleY = canvas.height / imageRef.current.height;
-
-      boxes.forEach((box) => {
-        const classIndex = classes.indexOf(box.cls || "");
-        ctx.strokeStyle = classColors[classIndex % classColors.length];
-        ctx.setLineDash([]);
-        ctx.strokeRect(
-          box.x * scaleX,
-          box.y * scaleY,
-          box.width * scaleX,
-          box.height * scaleY,
-        );
-      });
-
-      suggestedBoxes.forEach((box) => {
-        const scaledX = box.x * scaleX;
-        const scaledY = box.y * scaleY;
-        const scaledWidth = box.width * scaleX;
-        const scaledHeight = box.height * scaleY;
-        const x1 = scaledX - scaledWidth / 2;
-        const y1 = scaledY - scaledHeight / 2;
-
-        const classIndex = classes.indexOf(box.cls || "");
-        ctx.strokeStyle = classColors[classIndex % classColors.length];
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([2, 2]);
-        ctx.strokeRect(x1, y1, scaledWidth, scaledHeight);
-      });
-    }
-  }, [boxes, imageRef, suggestedBoxes, classes]);
+  const renderBoxesCb = useCallback(
+    () =>
+      renderBoxes({
+        canvas: canvasRef.current,
+        image: imageRef.current,
+        boxes,
+        suggestedBoxes,
+        classes,
+      }),
+    [canvasRef, boxes, imageRef, suggestedBoxes, classes],
+  );
 
   useEffect(() => {
     if (canvasSize.width > 0 && canvasSize.height > 0) {
-      renderBoxes();
+      renderBoxesCb();
     }
-  }, [canvasSize, renderBoxes]);
+  }, [canvasSize, renderBoxesCb]);
 
   useEffect(() => {
     if (imageFile && containerSize) {
@@ -144,7 +115,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         }
 
         setCanvasSize({ width: newWidth, height: newHeight });
-        renderBoxes();
+        renderBoxesCb();
       };
       img.src = url;
 
@@ -152,7 +123,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         URL.revokeObjectURL(url);
       };
     }
-  }, [imageFile, containerSize, renderBoxes]);
+  }, [imageFile, containerSize, renderBoxesCb]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -161,11 +132,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       const img = new Image();
       img.onload = () => {
         imageRef.current = img;
-        renderBoxes();
+        renderBoxesCb();
       };
       img.src = imageUrl;
     }
-  }, [imageUrl, boxes, renderBoxes]);
+  }, [imageUrl, boxes, renderBoxesCb]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -204,7 +175,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           canvasRef.current.width,
           canvasRef.current.height,
         );
-        renderBoxes();
+        renderBoxesCb();
         if (currentBox) {
           const classIndex = classes.indexOf(currentClass);
           ctx.strokeStyle = classColors[classIndex % classColors.length];

@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { Box } from "@/lib/types";
-import { classColors } from "./ImageDialog";
+import { renderBoxes } from "@/lib/renderBoxes";
 
 interface ImageGridProps {
   boxes: { [key: string]: Box[] };
@@ -27,31 +27,22 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   const drawBoxes = (
     imageName: string,
     boxes: Box[],
-    style: string = "solid",
+    suggestedBoxes: Box[],
   ) => {
     const canvas = canvasRefs.current[imageName];
-    const imgElement = imageRefs.current[imageName];
-    if (canvas && imgElement) {
-      const ctx = canvas.getContext("2d");
-      if (ctx && boxes) {
-        const { naturalWidth, naturalHeight } = imgElement;
-
-        // Set canvas dimensions to match the image's natural dimensions
-        canvas.width = naturalWidth;
-        canvas.height = naturalHeight;
-
-        boxes.forEach((box) => {
-          const x = box.x - box.width / 2;
-          const y = box.y - box.height / 2;
-
-          const classIndex = box.cls ? classes.indexOf(box.cls) : 0;
-          ctx.strokeStyle = classColors[classIndex % classColors.length];
-          ctx.setLineDash(style === "dashed" ? [2, 2] : []);
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x, y, box.width, box.height);
-        });
-      }
-    }
+    const image = imageRefs.current[imageName];
+    if (!canvas || !image) return;
+    const { width, height } = image;
+    canvas.width = width;
+    canvas.height = height;
+    renderBoxes({
+      canvas,
+      image,
+      boxes,
+      suggestedBoxes,
+      classes,
+      drawImage: false,
+    });
   };
 
   return (
@@ -76,14 +67,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                 boxes[image.name]?.filter((box) =>
                   filterPositive ? box.cls != "positive" : true,
                 ),
-                "solid",
-              );
-              drawBoxes(
-                image.name,
                 suggestedBoxes[image.name]?.filter((box) =>
                   filterPositive ? box.cls != "positive" : true,
                 ),
-                "dashed",
               );
             }}
           />
