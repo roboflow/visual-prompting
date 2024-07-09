@@ -64,7 +64,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     if (!classes.includes(currentClass)) {
       setCurrentClass(classes[1]);
     }
-  }, [classes]);
+  }, [classes, currentClass]);
 
   useEffect(() => {
     if (containerSize && imageRef.current) {
@@ -236,36 +236,39 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
         <div className="flex gap-2 items-center pr-12">
           {classes.map((cls, index) => (
-            <Tooltip>
-              <TooltipTrigger>
-                <Button
-                  key={cls}
-                  variant={currentClass === cls ? "default" : "outline"}
-                  className={"flex items-center"}
-                  onClick={() => setCurrentClass(cls)}
-                >
-                  <span
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{
-                      backgroundColor: classColors[index % classColors.length],
-                    }}
-                  ></span>
-                  {cls}
-                </Button>
-              </TooltipTrigger>
-              {cls === "negative" && (
-                <TooltipContent>
-                  Negative class is used to mark areas that do not contain any
-                  of your classes.
-                </TooltipContent>
-              )}
-              {cls === "positive" && (
-                <TooltipContent>
-                  Positive class is a default class for testing that will be
-                  removed if you add a custom class.
-                </TooltipContent>
-              )}
-            </Tooltip>
+            <Fragment key={cls}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    key={cls}
+                    variant={currentClass === cls ? "default" : "outline"}
+                    className={"flex items-center"}
+                    onClick={() => setCurrentClass(cls)}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{
+                        backgroundColor:
+                          classColors[index % classColors.length],
+                      }}
+                    ></span>
+                    {cls}
+                  </Button>
+                </TooltipTrigger>
+                {cls === "negative" && (
+                  <TooltipContent>
+                    Negative class is used to mark areas that do not contain any
+                    of your classes.
+                  </TooltipContent>
+                )}
+                {cls === "positive" && (
+                  <TooltipContent>
+                    Positive class is a default class for testing that will be
+                    removed if you add a custom class.
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </Fragment>
           ))}
           <form onSubmit={handleAddClass} className="flex gap-2">
             <Input

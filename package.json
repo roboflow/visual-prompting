@@ -6,8 +6,9 @@
     "format:write": "prettier --write '**/*.{js,ts,json,md,jsx,tsx,css,scss}'",
     "dev": "cd frontend && npm run dev"
   },
-  "dependencies": {},
   "devDependencies": {
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
     "prettier": "^3.3.2"
   }
 }
