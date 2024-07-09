@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "format:write": "prettier --write '**/*.{js,ts,json,md,jsx,tsx,css,scss}'"
+    "format:write": "prettier --write '**/*.{js,ts,json,md,jsx,tsx,css,scss}'",
+    "dev": "cd frontend && npm run dev"
   },
   "dependencies": {},
   "devDependencies": {

@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  Fragment,
+} from "react";
 import { Box } from "@/lib/types";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export const classColors = [
   "red",
@@ -17,7 +24,7 @@ export const classColors = [
 
 interface ImageDialogProps {
   classes: string[];
-  setClasses: (classes: string[]) => void;
+  setClasses: React.Dispatch<React.SetStateAction<string[]>>;
   imageFile: File;
   isOpen: boolean;
   onClose: () => void;
@@ -43,10 +50,16 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-  const [currentClass, setCurrentClass] = useState("positive");
+  const [currentClass, setCurrentClass] = useState(classes[1]);
   const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
+
+  useEffect(() => {
+    if (!classes.includes(currentClass)) {
+      setCurrentClass(classes[1]);
+    }
+  }, [classes]);
 
   useEffect(() => {
     if (containerSize && imageRef.current) {
@@ -238,7 +251,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const handleAddClass = (e: React.FormEvent) => {
     e.preventDefault();
     if (newClass && !classes.includes(newClass)) {
-      setClasses([...classes, newClass]);
+      setClasses((_c) => [..._c, newClass]);
       setNewClass("");
     }
   };
@@ -248,20 +261,36 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
         <div className="flex space-x-2 items-center">
           {classes.map((cls, index) => (
-            <Button
-              key={cls}
-              variant={currentClass === cls ? "default" : "outline"}
-              className={"flex items-center"}
-              onClick={() => setCurrentClass(cls)}
-            >
-              <span
-                className="w-4 h-4 rounded-full mr-2"
-                style={{
-                  backgroundColor: classColors[index % classColors.length],
-                }}
-              ></span>
-              {cls}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  key={cls}
+                  variant={currentClass === cls ? "default" : "outline"}
+                  className={"flex items-center"}
+                  onClick={() => setCurrentClass(cls)}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{
+                      backgroundColor: classColors[index % classColors.length],
+                    }}
+                  ></span>
+                  {cls}
+                </Button>
+              </TooltipTrigger>
+              {cls === "negative" && (
+                <TooltipContent>
+                  Negative class is used to mark areas that do not contain any
+                  of your classes.
+                </TooltipContent>
+              )}
+              {cls === "positive" && (
+                <TooltipContent>
+                  Positive class is a default class for testing that will be
+                  removed if you add a custom class.
+                </TooltipContent>
+              )}
+            </Tooltip>
           ))}
           <form onSubmit={handleAddClass} className="flex space-x-2">
             <Input
@@ -270,6 +299,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               onChange={(e) => setNewClass(e.target.value)}
               placeholder="Add new class"
               className="w-32 ml-5"
+              autoFocus
             />
             <Button type="submit" variant="outline">
               Add

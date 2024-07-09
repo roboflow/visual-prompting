@@ -10,6 +10,7 @@ interface ImageGridProps {
   images: File[];
   onImageClick: (image: File) => void;
   suggestedBoxes: { [key: string]: Box[] };
+  filterPositive: boolean;
 }
 
 const ImageGrid: React.FC<ImageGridProps> = ({
@@ -18,6 +19,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   classes,
   onImageClick,
   suggestedBoxes,
+  filterPositive,
 }) => {
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const imageRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
@@ -69,8 +71,20 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             className="absolute inset-0 w-full h-full object-cover"
             onLoad={(event) => {
               URL.revokeObjectURL((event.target as HTMLImageElement).src);
-              drawBoxes(image.name, boxes[image.name], "solid");
-              drawBoxes(image.name, suggestedBoxes[image.name], "dashed");
+              drawBoxes(
+                image.name,
+                boxes[image.name]?.filter((box) =>
+                  filterPositive ? box.cls != "positive" : true,
+                ),
+                "solid",
+              );
+              drawBoxes(
+                image.name,
+                suggestedBoxes[image.name]?.filter((box) =>
+                  filterPositive ? box.cls != "positive" : true,
+                ),
+                "dashed",
+              );
             }}
           />
           <canvas
