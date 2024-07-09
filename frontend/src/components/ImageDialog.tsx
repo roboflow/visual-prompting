@@ -261,20 +261,36 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
         <div className="flex space-x-2 items-center">
           {classes.map((cls, index) => (
-            <Button
-              key={cls}
-              variant={currentClass === cls ? "default" : "outline"}
-              className={"flex items-center"}
-              onClick={() => setCurrentClass(cls)}
-            >
-              <span
-                className="w-4 h-4 rounded-full mr-2"
-                style={{
-                  backgroundColor: classColors[index % classColors.length],
-                }}
-              ></span>
-              {cls}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  key={cls}
+                  variant={currentClass === cls ? "default" : "outline"}
+                  className={"flex items-center"}
+                  onClick={() => setCurrentClass(cls)}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{
+                      backgroundColor: classColors[index % classColors.length],
+                    }}
+                  ></span>
+                  {cls}
+                </Button>
+              </TooltipTrigger>
+              {cls === "negative" && (
+                <TooltipContent>
+                  Negative class is used to mark areas that do not contain any
+                  of your classes.
+                </TooltipContent>
+              )}
+              {cls === "positive" && (
+                <TooltipContent>
+                  Positive class is a default class for testing that will be
+                  removed if you add a custom class.
+                </TooltipContent>
+              )}
+            </Tooltip>
           ))}
           <form onSubmit={handleAddClass} className="flex space-x-2">
             <Input
@@ -283,6 +299,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               onChange={(e) => setNewClass(e.target.value)}
               placeholder="Add new class"
               className="w-32 ml-5"
+              autoFocus
             />
             <Button type="submit" variant="outline">
               Add

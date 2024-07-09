@@ -73,14 +73,14 @@ const ImageGrid: React.FC<ImageGridProps> = ({
               URL.revokeObjectURL((event.target as HTMLImageElement).src);
               drawBoxes(
                 image.name,
-                boxes[image.name].filter((box) =>
+                boxes[image.name]?.filter((box) =>
                   filterPositive ? box.cls != "positive" : true,
                 ),
                 "solid",
               );
               drawBoxes(
                 image.name,
-                suggestedBoxes[image.name].filter((box) =>
+                suggestedBoxes[image.name]?.filter((box) =>
                   filterPositive ? box.cls != "positive" : true,
                 ),
                 "dashed",
