@@ -54,13 +54,14 @@ export default function Home() {
     : classes;
   const [isInferring, setIsInferring] = useState(false);
 
-  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
+  async function trainAndInfer(
+    newBoxes: Box[],
+    imageWidth: number,
+    imageHeight: number,
+  ) {
     if (!selectedImage) {
       return;
     }
-
-    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
-    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
 
     const imageBase64 = (await toBase64(selectedImage))
       .replace("data:image/png;base64,", "")
@@ -115,6 +116,38 @@ export default function Home() {
       [selectedImage.name]: filteredBoxes,
     });
   }
+
+  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
+    if (!selectedImage) {
+      return;
+    }
+
+    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
+    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
+
+    return trainAndInfer(newBoxes, imageWidth, imageHeight);
+  }
+
+  const onPreviousBoxRemoved = (imageWidth: number, imageHeight: number) => {
+    if (!selectedImage) {
+      return;
+    }
+
+    const newBoxes = userBoxes[selectedImage.name].slice(0, -1);
+    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
+
+    return trainAndInfer(newBoxes, imageWidth, imageHeight);
+  };
+
+  const onAllBoxesRemoved = (imageWidth: number, imageHeight: number) => {
+    if (!selectedImage) {
+      return;
+    }
+
+    setUserBoxes({ ...userBoxes, [selectedImage.name]: [] });
+
+    return trainAndInfer([], imageWidth, imageHeight);
+  };
 
   async function handleDialogClose() {
     setDialogOpen(false);
@@ -215,6 +248,23 @@ export default function Home() {
     }
   }
 
+  function onImageRemoved(index: number) {
+    const newImages = [...images];
+    const removed = newImages.splice(index, 1);
+    setImages(newImages);
+
+    removed.map((image) => {
+      setUserBoxes((prev) => {
+        const { [image.name]: _, ...rest } = prev;
+        return rest;
+      });
+      setSuggestedBoxes((prev) => {
+        const { [image.name]: _, ...rest } = prev;
+        return rest;
+      });
+    });
+  }
+
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <main className="flex-1 bg-gray-100 dark:bg-gray-800 py-12 md:py-24">
@@ -253,6 +303,7 @@ export default function Home() {
                           setSelectedImage(image);
                           setDialogOpen(true);
                         }}
+                        onImageRemoved={onImageRemoved}
                         filterPositive={filterPositive}
                         boxes={userBoxes}
                         suggestedBoxes={suggestedBoxes}
@@ -305,7 +356,9 @@ export default function Home() {
           boxes={(userBoxes[selectedImage.name] || []).filter((box) =>
             filterPositive ? box.cls !== "positive" : true,
           )}
-          onAddBox={onBoxAdded}
+          onBoxAdded={onBoxAdded}
+          onPreviousBoxRemoved={onPreviousBoxRemoved}
+          onAllBoxesRemoved={onAllBoxesRemoved}
           suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
         />
       )}

@@ -30,7 +30,9 @@ interface ImageDialogProps {
   isOpen: boolean;
   onClose: () => void;
   boxes: Box[];
-  onAddBox: (box: Box, imageWidth: number, imageHeight: number) => void;
+  onBoxAdded: (box: Box, imageWidth: number, imageHeight: number) => void;
+  onPreviousBoxRemoved: (imageWidth: number, imageHeight: number) => void;
+  onAllBoxesRemoved: (imageWidth: number, imageHeight: number) => void;
   suggestedBoxes: Box[];
 }
 
@@ -41,7 +43,9 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   isOpen,
   onClose,
   boxes,
-  onAddBox,
+  onBoxAdded,
+  onPreviousBoxRemoved,
+  onAllBoxesRemoved,
   suggestedBoxes,
 }) => {
   const [imageUrl, setImageUrl] = useState("");
@@ -60,7 +64,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     if (!classes.includes(currentClass)) {
       setCurrentClass(classes[1]);
     }
-  }, [classes]);
+  }, [classes, currentClass]);
 
   useEffect(() => {
     if (containerSize && imageRef.current) {
@@ -213,7 +217,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         height: Math.abs(currentBox.height) * scaleY,
       };
 
-      onAddBox(adjustedBox, imgWidth, imgHeight);
+      onBoxAdded(adjustedBox, imgWidth, imgHeight);
       setCurrentBox(null);
     }
     setIsDrawing(false);
@@ -230,40 +234,43 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
-        <div className="flex space-x-2 items-center">
+        <div className="flex gap-2 items-center pr-12">
           {classes.map((cls, index) => (
-            <Tooltip>
-              <TooltipTrigger>
-                <Button
-                  key={cls}
-                  variant={currentClass === cls ? "default" : "outline"}
-                  className={"flex items-center"}
-                  onClick={() => setCurrentClass(cls)}
-                >
-                  <span
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{
-                      backgroundColor: classColors[index % classColors.length],
-                    }}
-                  ></span>
-                  {cls}
-                </Button>
-              </TooltipTrigger>
-              {cls === "negative" && (
-                <TooltipContent>
-                  Negative class is used to mark areas that do not contain any
-                  of your classes.
-                </TooltipContent>
-              )}
-              {cls === "positive" && (
-                <TooltipContent>
-                  Positive class is a default class for testing that will be
-                  removed if you add a custom class.
-                </TooltipContent>
-              )}
-            </Tooltip>
+            <Fragment key={cls}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    key={cls}
+                    variant={currentClass === cls ? "default" : "outline"}
+                    className={"flex items-center"}
+                    onClick={() => setCurrentClass(cls)}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{
+                        backgroundColor:
+                          classColors[index % classColors.length],
+                      }}
+                    ></span>
+                    {cls}
+                  </Button>
+                </TooltipTrigger>
+                {cls === "negative" && (
+                  <TooltipContent>
+                    Negative class is used to mark areas that do not contain any
+                    of your classes.
+                  </TooltipContent>
+                )}
+                {cls === "positive" && (
+                  <TooltipContent>
+                    Positive class is a default class for testing that will be
+                    removed if you add a custom class.
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </Fragment>
           ))}
-          <form onSubmit={handleAddClass} className="flex space-x-2">
+          <form onSubmit={handleAddClass} className="flex gap-2">
             <Input
               type="text"
               value={newClass}
@@ -276,6 +283,37 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               Add
             </Button>
           </form>
+          <div className="flex-1" />
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                if (imageRef?.current) {
+                  onPreviousBoxRemoved(
+                    imageRef?.current?.width,
+                    imageRef?.current?.height,
+                  );
+                }
+              }}
+              variant="outline"
+              disabled={boxes.length === 0}
+            >
+              Undo
+            </Button>
+            <Button
+              onClick={() => {
+                if (imageRef?.current) {
+                  onAllBoxesRemoved(
+                    imageRef?.current?.width,
+                    imageRef?.current?.height,
+                  );
+                }
+              }}
+              variant="destructive"
+              disabled={boxes.length === 0}
+            >
+              Remove All Boxes
+            </Button>
+          </div>
         </div>
         <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
           <canvas
@@ -283,7 +321,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             id="imageCanvas"
             width={canvasSize.width}
             height={canvasSize.height}
-            className="max-w-full max-h-full mx-auto"
+            className="max-w-full max-h-full mx-auto cursor-pointer"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
