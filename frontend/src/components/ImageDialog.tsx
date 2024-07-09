@@ -11,7 +11,6 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { useRenderBoxes } from "@/hooks/useRenderBoxes";
 import { renderBoxes } from "@/lib/renderBoxes";
 
 export const classColors = [

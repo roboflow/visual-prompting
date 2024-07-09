@@ -2,8 +2,6 @@
 
 import React, { useRef } from "react";
 import { Box } from "@/lib/types";
-import { classColors } from "./ImageDialog";
-import { useRenderBoxes } from "@/hooks/useRenderBoxes";
 import { renderBoxes } from "@/lib/renderBoxes";
 
 interface ImageGridProps {
