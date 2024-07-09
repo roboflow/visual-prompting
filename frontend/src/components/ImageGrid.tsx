@@ -3,12 +3,15 @@
 import React, { useRef } from "react";
 import { Box } from "@/lib/types";
 import { renderBoxes } from "@/lib/renderBoxes";
+import { Button } from "./ui/button";
+import { Cross2Icon } from "@radix-ui/react-icons";
 
 interface ImageGridProps {
   boxes: { [key: string]: Box[] };
   classes: string[];
   images: File[];
   onImageClick: (image: File) => void;
+  onImageRemoved: (index: number) => void;
   suggestedBoxes: { [key: string]: Box[] };
   filterPositive: boolean;
 }
@@ -18,6 +21,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   boxes,
   classes,
   onImageClick,
+  onImageRemoved,
   suggestedBoxes,
   filterPositive,
 }) => {
@@ -47,7 +51,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
 
   return (
     <div className="grid grid-cols-3 gap-2">
-      {images.map((image) => (
+      {images.map((image, i) => (
         <div
           key={image.name}
           className="relative aspect-square overflow-hidden rounded-sm"
@@ -59,7 +63,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             }}
             src={URL.createObjectURL(image)}
             alt={`image-${image.name}`}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover cursor-pointer"
             onLoad={(event) => {
               URL.revokeObjectURL((event.target as HTMLImageElement).src);
               drawBoxes(
@@ -79,6 +83,17 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             }}
             className="absolute inset-0 w-full h-full pointer-events-none object-cover"
           />
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onImageRemoved(i);
+            }}
+            className="absolute opacity-60 m-1 right-0"
+            variant="destructive"
+            size="icon"
+          >
+            <Cross2Icon className="h-4 w-4" />
+          </Button>
         </div>
       ))}
     </div>
