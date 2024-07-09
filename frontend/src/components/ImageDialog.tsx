@@ -13,7 +13,7 @@ export const classColors = [
   "blue",
   "pink",
   "cyan",
-]
+];
 
 interface ImageDialogProps {
   classes: string[];
@@ -85,7 +85,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           box.x * scaleX,
           box.y * scaleY,
           box.width * scaleX,
-          box.height * scaleY
+          box.height * scaleY,
         );
       });
 
@@ -111,7 +111,6 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       renderBoxes();
     }
   }, [canvasSize, renderBoxes]);
-
 
   useEffect(() => {
     if (imageFile && containerSize) {
@@ -190,13 +189,18 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           0,
           0,
           canvasRef.current.width,
-          canvasRef.current.height
+          canvasRef.current.height,
         );
         renderBoxes();
         if (currentBox) {
           const classIndex = classes.indexOf(currentClass);
           ctx.strokeStyle = classColors[classIndex % classColors.length];
-          ctx.strokeRect(currentBox.x, currentBox.y, currentBox.width, currentBox.height);
+          ctx.strokeRect(
+            currentBox.x,
+            currentBox.y,
+            currentBox.width,
+            currentBox.height,
+          );
         }
       }
     }
@@ -250,7 +254,12 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               className={"flex items-center"}
               onClick={() => setCurrentClass(cls)}
             >
-              <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: classColors[index % classColors.length] }}></span>
+              <span
+                className="w-4 h-4 rounded-full mr-2"
+                style={{
+                  backgroundColor: classColors[index % classColors.length],
+                }}
+              ></span>
               {cls}
             </Button>
           ))}
@@ -262,7 +271,9 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               placeholder="Add new class"
               className="w-32 ml-5"
             />
-            <Button type="submit" variant="outline">Add</Button>
+            <Button type="submit" variant="outline">
+              Add
+            </Button>
           </form>
         </div>
         <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
