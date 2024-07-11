@@ -59,7 +59,7 @@ export default function Home() {
     imageWidth: number,
     imageHeight: number,
   ) {
-    if (!selectedImage) {
+    if (!selectedImage || newBoxes.length === 0) {
       return;
     }
 
@@ -152,13 +152,13 @@ export default function Home() {
   async function handleDialogClose() {
     setDialogOpen(false);
     setSelectedImage(null);
-    setIsInferring(true);
 
     // Train model on all labeled images
     const labeledImages = Object.entries(userBoxes).filter(
       ([_, boxes]) => boxes.length > 0,
     );
     if (labeledImages.length === 0) return;
+    setIsInferring(true);
 
     const trainingData = await Promise.all(
       labeledImages.map(async ([imageName, boxes]) => {
