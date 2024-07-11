@@ -235,6 +235,19 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px] flex">
         <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4 py-10">
+          <form onSubmit={handleAddClass} className="flex gap-2 pb-4">
+              <Input
+                type="text"
+                value={newClass}
+                onChange={(e) => setNewClass(e.target.value)}
+                placeholder="Add new class"
+                className="w-full"
+                autoFocus
+              />
+              <Button type="submit" variant="outline">
+                Add
+              </Button>
+          </form>
           {classes.map((cls, index) => (
             <Fragment key={cls}>
               <Tooltip>
@@ -270,19 +283,6 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               </Tooltip>
             </Fragment>
           ))}
-          <form onSubmit={handleAddClass} className="flex gap-2 pt-4">
-            <Input
-              type="text"
-              value={newClass}
-              onChange={(e) => setNewClass(e.target.value)}
-              placeholder="Add new class"
-              className="w-full"
-              autoFocus
-            />
-            <Button type="submit" variant="outline">
-              Add
-            </Button>
-          </form>
           <div className="flex-1" />
         </div>
         <div className="flex-2 flex flex-col justify-center w-full mt-5 basis-1/2">
