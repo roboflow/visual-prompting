@@ -31,9 +31,9 @@ interface ImageDialogProps {
   isOpen: boolean;
   onClose: () => void;
   boxes: Box[];
-  onBoxAdded: (box: Box, imageWidth: number, imageHeight: number) => void;
-  onPreviousBoxRemoved: (imageWidth: number, imageHeight: number) => void;
-  onAllBoxesRemoved: (imageWidth: number, imageHeight: number) => void;
+  onBoxAdded: (box: Box) => void;
+  onPreviousBoxRemoved: () => void;
+  onAllBoxesRemoved: () => void;
   suggestedBoxes: Box[];
 }
 
@@ -235,41 +235,31 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   };
 
   const addBoxFromSuggested = (box: Box) => {
-    if (imageRef.current) {
-      const imgWidth = imageRef.current.width;
-      const imgHeight = imageRef.current.height;
+    // Adjust x and y to be the top left corner
+    const adjustedBox = {
+      cls: box.cls,
+      x: box.x - box.width / 2,
+      y: box.y - box.height / 2,
+      width: box.width,
+      height: box.height,
+      confidence: box.confidence || 1,
+    };
 
-      // Adjust x and y to be the top left corner
-      const adjustedBox = {
-        cls: box.cls,
-        x: box.x - box.width / 2,
-        y: box.y - box.height / 2,
-        width: box.width,
-        height: box.height,
-        confidence: box.confidence || 1,
-      };
-
-      onBoxAdded(adjustedBox, imgWidth, imgHeight);
-    }
+    onBoxAdded(adjustedBox);
   };
 
   const denyBoxFromSuggested = (box: Box) => {
-    if (imageRef.current) {
-      const imgWidth = imageRef.current.width;
-      const imgHeight = imageRef.current.height;
+    // Adjust x and y to be the top left corner
+    const adjustedBox = {
+      cls: "negative",
+      x: box.x - box.width / 2,
+      y: box.y - box.height / 2,
+      width: box.width,
+      height: box.height,
+      confidence: box.confidence || 1,
+    };
 
-      // Adjust x and y to be the top left corner
-      const adjustedBox = {
-        cls: "negative",
-        x: box.x - box.width / 2,
-        y: box.y - box.height / 2,
-        width: box.width,
-        height: box.height,
-        confidence: box.confidence || 1,
-      };
-
-      onBoxAdded(adjustedBox, imgWidth, imgHeight);
-    }
+    onBoxAdded(adjustedBox);
   };
 
   const handleMouseUp = () => {
@@ -296,7 +286,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         confidence: 1,
       };
 
-      onBoxAdded(adjustedBox, imgWidth, imgHeight);
+      onBoxAdded(adjustedBox);
       setCurrentBox(null);
     }
     setIsDrawing(false);
@@ -380,12 +370,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           <div className="flex gap-2 mt-1">
             <Button
               onClick={() => {
-                if (imageRef?.current) {
-                  onPreviousBoxRemoved(
-                    imageRef?.current?.width,
-                    imageRef?.current?.height,
-                  );
-                }
+                onPreviousBoxRemoved();
               }}
               variant="outline"
               disabled={boxes.length === 0}
@@ -394,12 +379,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             </Button>
             <Button
               onClick={() => {
-                if (imageRef?.current) {
-                  onAllBoxesRemoved(
-                    imageRef?.current?.width,
-                    imageRef?.current?.height,
-                  );
-                }
+                onAllBoxesRemoved();
               }}
               variant="destructive"
               disabled={boxes.length === 0}

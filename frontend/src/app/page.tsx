@@ -54,7 +54,7 @@ export default function Home() {
     : classes;
   const [isInferring, setIsInferring] = useState(false);
 
-  async function trainAndInfer(boxes?: typeof userBoxes) {
+  async function trainAndInfer(boxes?: typeof userBoxes, inferImages?: File[]) {
     // Train model on all labeled images
     const labeledImages = Object.entries(boxes || userBoxes).filter(
       ([_, boxes]) => boxes.length > 0,
@@ -89,7 +89,7 @@ export default function Home() {
 
     // Run inference on all images
     const newSuggestedBoxes = { ...suggestedBoxes };
-    for (const image of images) {
+    for (const image of inferImages || images) {
       const imageBase64 = await toBase64(image);
       const { width, height } = await getImageDimensions(image);
       const inferResponse = await fetch(`${API_ROOT}/infer`, {
@@ -122,7 +122,7 @@ export default function Home() {
     setIsInferring(false);
   }
 
-  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
+  async function onBoxAdded(box: Box) {
     if (!selectedImage) {
       return;
     }
@@ -131,10 +131,10 @@ export default function Home() {
     const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes);
+    return trainAndInfer(allBoxes, [selectedImage]);
   }
 
-  const onPreviousBoxRemoved = (imageWidth: number, imageHeight: number) => {
+  const onPreviousBoxRemoved = () => {
     if (!selectedImage) {
       return;
     }
@@ -143,10 +143,10 @@ export default function Home() {
     const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes);
+    return trainAndInfer(allBoxes, [selectedImage]);
   };
 
-  const onAllBoxesRemoved = (imageWidth: number, imageHeight: number) => {
+  const onAllBoxesRemoved = () => {
     if (!selectedImage) {
       return;
     }
@@ -154,7 +154,7 @@ export default function Home() {
     const allBoxes = { ...userBoxes, [selectedImage.name]: [] };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes);
+    return trainAndInfer(allBoxes, [selectedImage]);
   };
 
   async function handleDialogClose() {
