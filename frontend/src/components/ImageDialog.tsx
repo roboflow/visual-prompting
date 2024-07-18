@@ -12,11 +12,7 @@ import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { renderBoxes } from "@/lib/renderBoxes";
-import {
-  EyeNoneIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-} from "@radix-ui/react-icons";
+import { EyeNoneIcon, CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
 
 export const classColors = [
   "red",
@@ -403,13 +399,14 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           </div>
         </div>
         <div className="flex-1 basis-1/4 overflow-auto">
+          <h2 className="text-xl font-bold">Predictions</h2>
           <ul className="flex flex-col">
             {sortedSuggestedBoxesWithIndex.map((b, i) => {
               const hovered = hoveredPredictionIndex === b.originalIndex;
               return (
                 <Fragment key={i}>
                   <li
-                    className="flex w-full py-1 items-center justify-between"
+                    className="flex w-full py-2 items-center justify-between shadow-sm hover:shadow-md rounded-lg"
                     onMouseEnter={() => {
                       console.log("pred", i, b);
                       setHoveredPredictionIndex(b.originalIndex);
@@ -418,26 +415,35 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                       setHoveredPredictionIndex(null);
                     }}
                   >
-                    <span className="select-none">{b.cls}</span>
+                    <span className="select-none pl-2">{b.cls}</span>
                     {hovered && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <EyeNoneIcon
-                          className="h-5 w-5"
+                          // Pop effect
+                          className="h-8 w-8 rounded-full p-1 bg-slate-50 hover:-translate-y-[2px] hover:shadow-md"
                           onMouseEnter={() => setHideHover(true)}
                           onMouseLeave={() => setHideHover(false)}
                         />
-                        <CheckIcon
-                          className="h-5 w-5"
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => {
                             addBoxFromSuggested(b);
                           }}
-                        />
-                        <ExclamationTriangleIcon
-                          className="h-5 w-5"
+                        >
+                          <CheckIcon className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => {
                             denyBoxFromSuggested(b);
                           }}
-                        />
+                        >
+                          <Cross2Icon className="h-5 w-5" />
+                        </Button>
                       </div>
                     )}
                   </li>
