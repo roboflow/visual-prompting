@@ -54,108 +54,9 @@ export default function Home() {
     : classes;
   const [isInferring, setIsInferring] = useState(false);
 
-  async function trainAndInfer(
-    newBoxes: Box[],
-    imageWidth: number,
-    imageHeight: number,
-  ) {
-    if (!selectedImage || newBoxes.length === 0) {
-      return;
-    }
-
-    const imageBase64 = (await toBase64(selectedImage))
-      .replace("data:image/png;base64,", "")
-      .replace("data:image/jpeg;base64,", "");
-
-    // Train
-    const trainResponse = await fetch(`${API_ROOT}/train`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([
-        {
-          image_contents: imageBase64,
-          boxes: normalizeBoxes(newBoxes, imageWidth, imageHeight),
-        },
-      ]),
-    });
-
-    // Infer
-    const trainData = await trainResponse.json();
-    const modelId = trainData.model_id;
-
-    const inferResponse = await fetch(`${API_ROOT}/infer`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model_id: modelId,
-        image_contents: imageBase64,
-        confidence_threshold: 0.9993,
-      }),
-    });
-
-    const inferData = await inferResponse.json();
-
-    const newSuggestedBoxes: Box[] = inferData.boxes.map((box: any) => ({
-      cls: box.cls,
-      x: box.bbox.x * imageWidth,
-      y: box.bbox.y * imageHeight,
-      width: box.bbox.w * imageWidth,
-      height: box.bbox.h * imageHeight,
-      confidence: box.confidence,
-    }));
-
-    const filteredBoxes: Box[] = newSuggestedBoxes.filter(
-      (obj: Box) => obj.cls !== "negative",
-    );
-
-    setSuggestedBoxes({
-      ...suggestedBoxes,
-      [selectedImage.name]: filteredBoxes,
-    });
-  }
-
-  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
-    if (!selectedImage) {
-      return;
-    }
-
-    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
-    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
-
-    return trainAndInfer(newBoxes, imageWidth, imageHeight);
-  }
-
-  const onPreviousBoxRemoved = (imageWidth: number, imageHeight: number) => {
-    if (!selectedImage) {
-      return;
-    }
-
-    const newBoxes = userBoxes[selectedImage.name].slice(0, -1);
-    setUserBoxes({ ...userBoxes, [selectedImage.name]: newBoxes });
-
-    return trainAndInfer(newBoxes, imageWidth, imageHeight);
-  };
-
-  const onAllBoxesRemoved = (imageWidth: number, imageHeight: number) => {
-    if (!selectedImage) {
-      return;
-    }
-
-    setUserBoxes({ ...userBoxes, [selectedImage.name]: [] });
-
-    return trainAndInfer([], imageWidth, imageHeight);
-  };
-
-  async function handleDialogClose() {
-    setDialogOpen(false);
-    setSelectedImage(null);
-
+  async function trainAndInfer(boxes?: typeof userBoxes) {
     // Train model on all labeled images
-    const labeledImages = Object.entries(userBoxes).filter(
+    const labeledImages = Object.entries(boxes || userBoxes).filter(
       ([_, boxes]) => boxes.length > 0,
     );
     if (labeledImages.length === 0) return;
@@ -217,9 +118,50 @@ export default function Home() {
 
       newSuggestedBoxes[image.name] = inferredBoxes;
     }
-
     setSuggestedBoxes(newSuggestedBoxes);
     setIsInferring(false);
+  }
+
+  async function onBoxAdded(box: Box, imageWidth: number, imageHeight: number) {
+    if (!selectedImage) {
+      return;
+    }
+
+    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
+    const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
+    setUserBoxes(allBoxes);
+
+    return trainAndInfer(allBoxes);
+  }
+
+  const onPreviousBoxRemoved = (imageWidth: number, imageHeight: number) => {
+    if (!selectedImage) {
+      return;
+    }
+
+    const newBoxes = userBoxes[selectedImage.name].slice(0, -1);
+    const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
+    setUserBoxes(allBoxes);
+
+    return trainAndInfer(allBoxes);
+  };
+
+  const onAllBoxesRemoved = (imageWidth: number, imageHeight: number) => {
+    if (!selectedImage) {
+      return;
+    }
+
+    const allBoxes = { ...userBoxes, [selectedImage.name]: [] };
+    setUserBoxes(allBoxes);
+
+    return trainAndInfer(allBoxes);
+  };
+
+  async function handleDialogClose() {
+    setDialogOpen(false);
+    setSelectedImage(null);
+
+    trainAndInfer();
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -301,6 +243,7 @@ export default function Home() {
                         classes={classesToShow}
                         images={images}
                         onImageClick={(image) => {
+                          trainAndInfer();
                           setSelectedImage(image);
                           setDialogOpen(true);
                         }}
