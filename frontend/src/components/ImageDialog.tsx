@@ -233,8 +233,21 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px]">
-        <div className="flex gap-2 items-center pr-12">
+      <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px] flex">
+        <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4 py-10">
+          <form onSubmit={handleAddClass} className="flex gap-2 pb-4">
+              <Input
+                type="text"
+                value={newClass}
+                onChange={(e) => setNewClass(e.target.value)}
+                placeholder="Add new class"
+                className="w-full"
+                autoFocus
+              />
+              <Button type="submit" variant="outline">
+                Add
+              </Button>
+          </form>
           {classes.map((cls, index) => (
             <Fragment key={cls}>
               <Tooltip>
@@ -242,7 +255,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                   <Button
                     key={cls}
                     variant={currentClass === cls ? "default" : "outline"}
-                    className={"flex items-center"}
+                    className="flex items-center w-full"
                     onClick={() => setCurrentClass(cls)}
                   >
                     <span
@@ -252,7 +265,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                           classColors[index % classColors.length],
                       }}
                     ></span>
-                    {cls}
+                    <span className="max-w-32 truncate">{cls}</span>
                   </Button>
                 </TooltipTrigger>
                 {cls === "negative" && (
@@ -270,20 +283,21 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               </Tooltip>
             </Fragment>
           ))}
-          <form onSubmit={handleAddClass} className="flex gap-2">
-            <Input
-              type="text"
-              value={newClass}
-              onChange={(e) => setNewClass(e.target.value)}
-              placeholder="Add new class"
-              className="w-32 ml-5"
-              autoFocus
-            />
-            <Button type="submit" variant="outline">
-              Add
-            </Button>
-          </form>
           <div className="flex-1" />
+        </div>
+        <div className="flex-2 flex flex-col justify-center w-full mt-5 basis-1/2">
+          <div ref={containerRef} className="w-full flex-1 flex items-center">
+            <canvas
+              ref={canvasRef}
+              id="imageCanvas"
+              width={canvasSize.width}
+              height={canvasSize.height}
+              className="max-w-full max-h-full mx-auto cursor-pointer"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+            ></canvas>
+          </div>
           <div className="flex gap-2">
             <Button
               onClick={() => {
@@ -315,18 +329,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             </Button>
           </div>
         </div>
-        <div ref={containerRef} className="mt-5 w-full h-[calc(100%-60px)]">
-          <canvas
-            ref={canvasRef}
-            id="imageCanvas"
-            width={canvasSize.width}
-            height={canvasSize.height}
-            className="max-w-full max-h-full mx-auto cursor-pointer"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          ></canvas>
-        </div>
+        <div className="flex-1 basis-1/4" />
       </DialogContent>
     </Dialog>
   );
