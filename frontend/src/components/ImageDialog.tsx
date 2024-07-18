@@ -412,14 +412,14 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           <h2 className="text-xl font-bold">Predictions</h2>
           <div className="mb-4">
             <div
-              className="flex w-full pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
               onMouseEnter={() => setHideUserBoxes(true)}
               onMouseLeave={() => setHideUserBoxes(false)}
             >
               Only show predictions
             </div>
             <div
-              className="flex w-full pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
               onMouseEnter={() => setHidePredictionBoxes(true)}
               onMouseLeave={() => setHidePredictionBoxes(false)}
             >
