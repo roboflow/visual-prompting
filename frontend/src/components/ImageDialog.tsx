@@ -67,6 +67,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     number | null
   >();
   const [hideHover, setHideHover] = useState(false);
+  const [hideUserBoxes, setHideUserBoxes] = useState(false);
+  const [hidePredictionBoxes, setHidePredictionBoxes] = useState(false);
 
   useEffect(() => {
     if (!classes.includes(currentClass)) {
@@ -95,21 +97,27 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       renderBoxes({
         canvas: canvasRef.current,
         image: imageRef.current,
-        boxes: typeof hoveredPredictionIndex == "number" ? [] : boxes,
-        suggestedBoxes: suggestedBoxes
-          .map((box) => {
-            return {
-              ...box,
-              highlighted:
-                typeof hoveredPredictionIndex == "number" &&
-                box === suggestedBoxes[hoveredPredictionIndex] &&
-                !hideHover,
-            };
-          })
-          .filter(
-            (box) =>
-              !(typeof hoveredPredictionIndex == "number") || box.highlighted,
-          ),
+        boxes:
+          typeof hoveredPredictionIndex == "number" || hideUserBoxes
+            ? []
+            : boxes,
+        suggestedBoxes: hidePredictionBoxes
+          ? []
+          : suggestedBoxes
+              .map((box) => {
+                return {
+                  ...box,
+                  highlighted:
+                    typeof hoveredPredictionIndex == "number" &&
+                    box === suggestedBoxes[hoveredPredictionIndex] &&
+                    !hideHover,
+                };
+              })
+              .filter(
+                (box) =>
+                  !(typeof hoveredPredictionIndex == "number") ||
+                  box.highlighted,
+              ),
         classes,
       }),
     [
@@ -120,6 +128,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       classes,
       hoveredPredictionIndex,
       hideHover,
+      hideUserBoxes,
+      hidePredictionBoxes,
     ],
   );
 
@@ -367,7 +377,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               onMouseUp={handleMouseUp}
             ></canvas>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-1">
             <Button
               onClick={() => {
                 if (imageRef?.current) {
@@ -400,6 +410,22 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         </div>
         <div className="flex-1 basis-1/4 overflow-auto">
           <h2 className="text-xl font-bold">Predictions</h2>
+          <div className="mb-4">
+            <div
+              className="flex w-full pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setHideUserBoxes(true)}
+              onMouseLeave={() => setHideUserBoxes(false)}
+            >
+              Only show predictions
+            </div>
+            <div
+              className="flex w-full pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setHidePredictionBoxes(true)}
+              onMouseLeave={() => setHidePredictionBoxes(false)}
+            >
+              Only show approved
+            </div>
+          </div>
           <ul className="flex flex-col">
             {sortedSuggestedBoxesWithIndex.map((b, i) => {
               const hovered = hoveredPredictionIndex === b.originalIndex;
