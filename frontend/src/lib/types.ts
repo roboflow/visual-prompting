@@ -4,6 +4,8 @@ export type Box = {
   y: number;
   width: number;
   height: number;
+  confidence: number;
+  highlighted?: boolean;
 };
 
 export type Datum = {

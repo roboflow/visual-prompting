@@ -25,7 +25,7 @@ function normalizeBoxes(boxes: Box[], imageWidth: number, imageHeight: number) {
       w: box.width / imageWidth,
       h: box.height / imageHeight,
     },
-    confidence: 0.5,
+    confidence: box.confidence || 0.5,
   }));
 }
 
@@ -99,12 +99,13 @@ export default function Home() {
 
     const inferData = await inferResponse.json();
 
-    const newSuggestedBoxes = inferData.boxes.map((box: any) => ({
+    const newSuggestedBoxes: Box[] = inferData.boxes.map((box: any) => ({
       cls: box.cls,
       x: box.bbox.x * imageWidth,
       y: box.bbox.y * imageHeight,
       width: box.bbox.w * imageWidth,
       height: box.bbox.h * imageHeight,
+      confidence: box.confidence,
     }));
 
     const filteredBoxes: Box[] = newSuggestedBoxes.filter(

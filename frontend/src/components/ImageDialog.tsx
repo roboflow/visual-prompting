@@ -12,6 +12,11 @@ import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { renderBoxes } from "@/lib/renderBoxes";
+import {
+  EyeNoneIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+} from "@radix-ui/react-icons";
 
 export const classColors = [
   "red",
@@ -59,6 +64,13 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
+  const sortedSuggestedBoxesWithIndex = suggestedBoxes
+    .map((box, index) => ({ ...box, originalIndex: index }))
+    .sort((a, b) => b.confidence - a.confidence);
+  const [hoveredPredictionIndex, setHoveredPredictionIndex] = useState<
+    number | null
+  >();
+  const [hideHover, setHideHover] = useState(false);
 
   useEffect(() => {
     if (!classes.includes(currentClass)) {
@@ -87,11 +99,32 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
       renderBoxes({
         canvas: canvasRef.current,
         image: imageRef.current,
-        boxes,
-        suggestedBoxes,
+        boxes: typeof hoveredPredictionIndex == "number" ? [] : boxes,
+        suggestedBoxes: suggestedBoxes
+          .map((box) => {
+            return {
+              ...box,
+              highlighted:
+                typeof hoveredPredictionIndex == "number" &&
+                box === suggestedBoxes[hoveredPredictionIndex] &&
+                !hideHover,
+            };
+          })
+          .filter(
+            (box) =>
+              !(typeof hoveredPredictionIndex == "number") || box.highlighted,
+          ),
         classes,
       }),
-    [canvasRef, boxes, imageRef, suggestedBoxes, classes],
+    [
+      canvasRef,
+      boxes,
+      imageRef,
+      suggestedBoxes,
+      classes,
+      hoveredPredictionIndex,
+      hideHover,
+    ],
   );
 
   useEffect(() => {
@@ -168,6 +201,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         y: Math.min(startPos.y, currentY),
         width: Math.abs(width),
         height: Math.abs(height),
+        confidence: 1,
       });
 
       if (ctx && imageRef.current) {
@@ -194,6 +228,44 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     }
   };
 
+  const addBoxFromSuggested = (box: Box) => {
+    if (imageRef.current) {
+      const imgWidth = imageRef.current.width;
+      const imgHeight = imageRef.current.height;
+
+      // Adjust x and y to be the top left corner
+      const adjustedBox = {
+        cls: box.cls,
+        x: box.x - box.width / 2,
+        y: box.y - box.height / 2,
+        width: box.width,
+        height: box.height,
+        confidence: box.confidence || 1,
+      };
+
+      onBoxAdded(adjustedBox, imgWidth, imgHeight);
+    }
+  };
+
+  const denyBoxFromSuggested = (box: Box) => {
+    if (imageRef.current) {
+      const imgWidth = imageRef.current.width;
+      const imgHeight = imageRef.current.height;
+
+      // Adjust x and y to be the top left corner
+      const adjustedBox = {
+        cls: "negative",
+        x: box.x - box.width / 2,
+        y: box.y - box.height / 2,
+        width: box.width,
+        height: box.height,
+        confidence: box.confidence || 1,
+      };
+
+      onBoxAdded(adjustedBox, imgWidth, imgHeight);
+    }
+  };
+
   const handleMouseUp = () => {
     if (currentBox && imageRef.current) {
       const imgWidth = imageRef.current.width;
@@ -215,6 +287,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         y: y * scaleY,
         width: Math.abs(currentBox.width) * scaleX,
         height: Math.abs(currentBox.height) * scaleY,
+        confidence: 1,
       };
 
       onBoxAdded(adjustedBox, imgWidth, imgHeight);
@@ -233,8 +306,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] h-[80vh] max-w-[1200px] max-h-[800px] flex">
-        <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4 py-10">
+      <DialogContent className="w-[90vw] h-[80vh] max-w-[1200px] max-h-[800px] flex py-14">
+        <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4">
           <form onSubmit={handleAddClass} className="flex gap-2 pb-4">
             <Input
               type="text"
@@ -329,7 +402,50 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             </Button>
           </div>
         </div>
-        <div className="flex-1 basis-1/4" />
+        <div className="flex-1 basis-1/4 overflow-auto">
+          <ul className="flex flex-col">
+            {sortedSuggestedBoxesWithIndex.map((b, i) => {
+              const hovered = hoveredPredictionIndex === b.originalIndex;
+              return (
+                <Fragment key={i}>
+                  <li
+                    className="flex w-full py-1 items-center justify-between"
+                    onMouseEnter={() => {
+                      console.log("pred", i, b);
+                      setHoveredPredictionIndex(b.originalIndex);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredPredictionIndex(null);
+                    }}
+                  >
+                    <span className="select-none">{b.cls}</span>
+                    {hovered && (
+                      <div className="flex gap-2">
+                        <EyeNoneIcon
+                          className="h-5 w-5"
+                          onMouseEnter={() => setHideHover(true)}
+                          onMouseLeave={() => setHideHover(false)}
+                        />
+                        <CheckIcon
+                          className="h-5 w-5"
+                          onClick={() => {
+                            addBoxFromSuggested(b);
+                          }}
+                        />
+                        <ExclamationTriangleIcon
+                          className="h-5 w-5"
+                          onClick={() => {
+                            denyBoxFromSuggested(b);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ul>
+        </div>
       </DialogContent>
     </Dialog>
   );
