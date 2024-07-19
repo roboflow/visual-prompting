@@ -4,7 +4,8 @@ import ImageDialog from "@/components/ImageDialog";
 import ImageGrid from "@/components/ImageGrid";
 import { Box } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CONFIDENCE_LEVELS } from "@/lib/constants";
 
 const API_ROOT = "https://api.owlvit.com";
 
@@ -47,6 +48,8 @@ export default function Home() {
   const [suggestedBoxes, setSuggestedBoxes] = useState<{
     [key: string]: Box[];
   }>({});
+
+  const [confidenceLevel, setConfidenceLevel] = useState(2);
   const [classes, setClasses] = useState(["negative", "positive"]);
   const filterPositive = classes.length > 2;
   const classesToShow = filterPositive
@@ -117,7 +120,7 @@ export default function Home() {
             /^data:image\/(png|jpeg);base64,/,
             "",
           ),
-          confidence_threshold: 0.9993,
+          confidence_threshold: CONFIDENCE_LEVELS[confidenceLevel],
         }),
       });
 
@@ -137,6 +140,10 @@ export default function Home() {
     setSuggestedBoxes(newSuggestedBoxes);
     setIsInferring(false);
   }
+
+  useEffect(() => {
+    trainAndInfer();
+  }, [confidenceLevel]);
 
   async function onBoxAdded(box: Box) {
     if (!selectedImage) {
@@ -318,6 +325,8 @@ export default function Home() {
           onPreviousBoxRemoved={onPreviousBoxRemoved}
           onAllBoxesRemoved={onAllBoxesRemoved}
           suggestedBoxes={suggestedBoxesToShow[selectedImage.name] || []}
+          confidenceLevel={confidenceLevel}
+          setConfidenceLevel={setConfidenceLevel}
         />
       )}
     </div>

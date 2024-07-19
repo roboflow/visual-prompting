@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   useState,
   useEffect,
@@ -11,8 +13,10 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import * as Slider from "@radix-ui/react-slider";
 import { renderBoxes } from "@/lib/renderBoxes";
 import { EyeNoneIcon, CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { CONFIDENCE_LEVELS } from "@/lib/constants";
 
 export const classColors = [
   "red",
@@ -35,6 +39,8 @@ interface ImageDialogProps {
   onPreviousBoxRemoved: () => void;
   onAllBoxesRemoved: () => void;
   suggestedBoxes: Box[];
+  confidenceLevel: number;
+  setConfidenceLevel: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({
@@ -48,6 +54,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   onPreviousBoxRemoved,
   onAllBoxesRemoved,
   suggestedBoxes,
+  confidenceLevel,
+  setConfidenceLevel,
 }) => {
   const [imageUrl, setImageUrl] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -328,7 +336,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           {classes.map((cls, index) => (
             <Fragment key={cls}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button
                     key={cls}
                     variant={currentClass === cls ? "default" : "outline"}
@@ -367,7 +375,25 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           ))}
           <div className="flex-1" />
         </div>
-        <div className="flex-2 flex flex-col justify-center w-full mt-5 basis-1/2">
+        <div className="flex-2 flex flex-col justify-center w-full gap-3 basis-1/2">
+          <div className="flex justify-center w-full items-center gap-2 flex-col">
+            <span>Confidence Level</span>
+            <Slider.Root
+              className="flex h-4 w-48 relative items-center"
+              defaultValue={[confidenceLevel]}
+              max={Object.keys(CONFIDENCE_LEVELS).length - 1}
+              step={1}
+              onValueChange={(value) => setConfidenceLevel(value[0])}
+            >
+              <Slider.Track className="bg-secondary h-1 w-full rounded-full relative">
+                <Slider.Range className="absolute rounded-full h-full bg-primary" />
+              </Slider.Track>
+              <Slider.Thumb
+                className="block w-4 h-4 bg-primary rounded-full"
+                aria-label="Confidence Level"
+              />
+            </Slider.Root>
+          </div>
           <div ref={containerRef} className="w-full flex-1 flex items-center">
             <canvas
               ref={canvasRef}
@@ -430,9 +456,14 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           </div>
 
           {sortedSuggestedBoxesWithIndex.length ? (
-            <span className="pb-2">
-              {sortedSuggestedBoxesWithIndex.length} predictions found
-            </span>
+            <div className="flex flex-col">
+              <span className="pb-2">
+                {sortedSuggestedBoxesWithIndex.length} predictions found
+              </span>
+              {/* <Button onClick={} variant="secondary" size="sm">
+                Approve All
+              </Button> */}
+            </div>
           ) : null}
 
           <ul className="flex flex-col">
