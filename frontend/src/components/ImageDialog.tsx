@@ -17,6 +17,7 @@ import * as Slider from "@radix-ui/react-slider";
 import { renderBoxes } from "@/lib/renderBoxes";
 import { EyeNoneIcon, CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { CONFIDENCE_LEVELS } from "@/lib/constants";
+import { Spinner } from "./ui/spinner";
 
 export const classColors = [
   "red",
@@ -41,6 +42,12 @@ interface ImageDialogProps {
   suggestedBoxes: Box[];
   confidenceLevel: number;
   setConfidenceLevel: React.Dispatch<React.SetStateAction<number>>;
+  trainAndInfer: ({
+    newConfidenceLevel,
+  }: {
+    newConfidenceLevel?: number;
+  }) => void;
+  isInferring: boolean;
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({
@@ -56,6 +63,8 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   suggestedBoxes,
   confidenceLevel,
   setConfidenceLevel,
+  trainAndInfer,
+  isInferring,
 }) => {
   const [imageUrl, setImageUrl] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -383,7 +392,10 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               defaultValue={[confidenceLevel]}
               max={Object.keys(CONFIDENCE_LEVELS).length - 1}
               step={1}
-              onValueChange={(value) => setConfidenceLevel(value[0])}
+              onValueChange={(value) => {
+                setConfidenceLevel(value[0]);
+                trainAndInfer({ newConfidenceLevel: value[0] });
+              }}
             >
               <Slider.Track className="bg-secondary h-1 w-full rounded-full relative">
                 <Slider.Range className="absolute rounded-full h-full bg-primary" />
@@ -428,7 +440,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           </div>
         </div>
         <div className="flex-1 basis-1/4 overflow-auto">
-          <h2 className="text-xl font-bold">Predictions</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold">Predictions</h2>
+            {/* Loading Spinner */}
+            {isInferring && <Spinner className="w-6 h-6" />}
+          </div>
           <div className="mb-4">
             <div
               className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"

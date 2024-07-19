@@ -4,7 +4,7 @@ import ImageDialog from "@/components/ImageDialog";
 import ImageGrid from "@/components/ImageGrid";
 import { Box } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CONFIDENCE_LEVELS } from "@/lib/constants";
 
 const API_ROOT = "https://api.owlvit.com";
@@ -73,12 +73,26 @@ export default function Home() {
     : suggestedBoxes;
   const [isInferring, setIsInferring] = useState(false);
 
-  async function trainAndInfer(boxes?: typeof userBoxes, inferImages?: File[]) {
+  const trainAndInfer = async ({
+    boxes,
+    inferImages,
+    runHotTrain = false,
+    newConfidenceLevel = confidenceLevel,
+  }: {
+    boxes?: typeof userBoxes;
+    inferImages?: File[];
+    runHotTrain?: boolean;
+    newConfidenceLevel?: number;
+  } = {}) => {
     // Train model on all labeled images
     const labeledImages = Object.entries(boxes || userBoxesToShow).filter(
       ([_, boxes]) => boxes.length > 0,
     );
-    if (labeledImages.length === 0) return;
+    const unlabeledImages = images.filter(
+      (image) => !labeledImages.find(([imageName]) => imageName === image.name),
+    );
+
+    if (labeledImages.length === 0 && !runHotTrain) return;
     setIsInferring(true);
 
     const trainingData = await Promise.all(
@@ -97,6 +111,11 @@ export default function Home() {
       }),
     );
 
+    if (labeledImages.length === 0) {
+      setIsInferring(false);
+      return;
+    }
+
     const trainResponse = await fetch(`${API_ROOT}/train`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -106,9 +125,11 @@ export default function Home() {
     const trainData = await trainResponse.json();
     const modelId = trainData.model_id;
 
+    console.log("CONFIDENCE", newConfidenceLevel);
+
     // Run inference on all images
     const newSuggestedBoxes = { ...suggestedBoxesToShow };
-    for (const image of inferImages || images) {
+    for (const image of inferImages || unlabeledImages) {
       const imageBase64 = await toBase64(image);
       const { width, height } = await getImageDimensions(image);
       const inferResponse = await fetch(`${API_ROOT}/infer`, {
@@ -120,7 +141,7 @@ export default function Home() {
             /^data:image\/(png|jpeg);base64,/,
             "",
           ),
-          confidence_threshold: CONFIDENCE_LEVELS[confidenceLevel],
+          confidence_threshold: CONFIDENCE_LEVELS[newConfidenceLevel],
         }),
       });
 
@@ -139,11 +160,7 @@ export default function Home() {
     }
     setSuggestedBoxes(newSuggestedBoxes);
     setIsInferring(false);
-  }
-
-  useEffect(() => {
-    trainAndInfer();
-  }, [confidenceLevel]);
+  };
 
   async function onBoxAdded(box: Box) {
     if (!selectedImage) {
@@ -154,7 +171,7 @@ export default function Home() {
     const allBoxes = { ...userBoxesToShow, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes, [selectedImage]);
+    return trainAndInfer({ boxes: allBoxes, inferImages: [selectedImage] });
   }
 
   const onPreviousBoxRemoved = () => {
@@ -166,7 +183,7 @@ export default function Home() {
     const allBoxes = { ...userBoxesToShow, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes, [selectedImage]);
+    return trainAndInfer({ boxes: allBoxes, inferImages: [selectedImage] });
   };
 
   const onAllBoxesRemoved = () => {
@@ -177,7 +194,7 @@ export default function Home() {
     const allBoxes = { ...userBoxesToShow, [selectedImage.name]: [] };
     setUserBoxes(allBoxes);
 
-    return trainAndInfer(allBoxes, [selectedImage]);
+    return trainAndInfer({ boxes: allBoxes, inferImages: [selectedImage] });
   };
 
   async function handleDialogClose() {
@@ -191,26 +208,27 @@ export default function Home() {
     const files = e.target.files;
 
     if (files) {
-      Array.from(files).map((imageFile) => {
-        toBase64(imageFile).then((imageBase64) => {
-          let imageBase64Stripped = imageBase64
-            .replace("data:image/png;base64,", "")
-            .replace("data:image/jpeg;base64,", "");
-          fetch(`${API_ROOT}/train`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify([
-              {
-                image_contents: imageBase64Stripped,
-                boxes: [],
-              },
-            ]),
-          });
-        });
-      });
+      // Array.from(files).map((imageFile) => {
+      //   toBase64(imageFile).then((imageBase64) => {
+      //     let imageBase64Stripped = imageBase64
+      //       .replace("data:image/png;base64,", "")
+      //       .replace("data:image/jpeg;base64,", "");
+      //     fetch(`${API_ROOT}/train`, {
+      //       method: "POST",
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //       body: JSON.stringify([
+      //         {
+      //           image_contents: imageBase64Stripped,
+      //           boxes: [],
+      //         },
+      //       ]),
+      //     });
+      //   });
+      // });
       setImages([...images, ...Array.from(files)]);
+      trainAndInfer({ inferImages: Array.from(files), runHotTrain: true });
     }
   }
 
@@ -327,6 +345,10 @@ export default function Home() {
           suggestedBoxes={suggestedBoxesToShow[selectedImage.name] || []}
           confidenceLevel={confidenceLevel}
           setConfidenceLevel={setConfidenceLevel}
+          trainAndInfer={({ newConfidenceLevel }) =>
+            trainAndInfer({ inferImages: [selectedImage], newConfidenceLevel })
+          }
+          isInferring={isInferring}
         />
       )}
     </div>
