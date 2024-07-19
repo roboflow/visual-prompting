@@ -12,6 +12,7 @@ import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { renderBoxes } from "@/lib/renderBoxes";
+import { EyeNoneIcon, CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
 
 export const classColors = [
   "red",
@@ -30,9 +31,9 @@ interface ImageDialogProps {
   isOpen: boolean;
   onClose: () => void;
   boxes: Box[];
-  onBoxAdded: (box: Box, imageWidth: number, imageHeight: number) => void;
-  onPreviousBoxRemoved: (imageWidth: number, imageHeight: number) => void;
-  onAllBoxesRemoved: (imageWidth: number, imageHeight: number) => void;
+  onBoxAdded: (box: Box) => void;
+  onPreviousBoxRemoved: () => void;
+  onAllBoxesRemoved: () => void;
   suggestedBoxes: Box[];
 }
 
@@ -59,6 +60,16 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   const [newClass, setNewClass] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const containerSize = useResizeObserver(containerRef);
+  const sortedSuggestedBoxesWithIndex = suggestedBoxes
+    .map((box, index) => ({ ...box, originalIndex: index }))
+    .sort((a, b) => b.confidence - a.confidence);
+  const [hoveredPredictionIndex, setHoveredPredictionIndex] = useState<
+    number | null
+  >();
+  const [hideHover, setHideHover] = useState(false);
+  const [showPredictionsOnly, setShowPredictionsOnly] = useState(false);
+  const [showApprovedBoxesOnly, setShowApprovedBoxesOnly] = useState(false);
+  const [showNegativeBoxesOnly, setShowNegativeBoxesOnly] = useState(false);
 
   useEffect(() => {
     if (!classes.includes(currentClass)) {
@@ -82,17 +93,53 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     }
   }, [containerSize]);
 
-  const renderBoxesCb = useCallback(
-    () =>
-      renderBoxes({
-        canvas: canvasRef.current,
-        image: imageRef.current,
-        boxes,
-        suggestedBoxes,
-        classes,
-      }),
-    [canvasRef, boxes, imageRef, suggestedBoxes, classes],
-  );
+  const renderBoxesCb = useCallback(() => {
+    let userBoxesToShow = boxes;
+    if (typeof hoveredPredictionIndex == "number" || showPredictionsOnly) {
+      userBoxesToShow = [];
+    }
+    if (showApprovedBoxesOnly) {
+      userBoxesToShow = boxes.filter((b) => b.cls != "negative");
+    }
+    if (showNegativeBoxesOnly) {
+      userBoxesToShow = boxes.filter((b) => b.cls == "negative");
+    }
+    renderBoxes({
+      canvas: canvasRef.current,
+      image: imageRef.current,
+      boxes: userBoxesToShow,
+      suggestedBoxes:
+        showApprovedBoxesOnly || showNegativeBoxesOnly
+          ? []
+          : suggestedBoxes
+              .map((box) => {
+                return {
+                  ...box,
+                  highlighted:
+                    typeof hoveredPredictionIndex == "number" &&
+                    box === suggestedBoxes[hoveredPredictionIndex] &&
+                    !hideHover,
+                };
+              })
+              .filter(
+                (box) =>
+                  !(typeof hoveredPredictionIndex == "number") ||
+                  box.highlighted,
+              ),
+      classes,
+    });
+  }, [
+    canvasRef,
+    boxes,
+    imageRef,
+    suggestedBoxes,
+    classes,
+    hoveredPredictionIndex,
+    hideHover,
+    showPredictionsOnly,
+    showApprovedBoxesOnly,
+    showNegativeBoxesOnly,
+  ]);
 
   useEffect(() => {
     if (canvasSize.width > 0 && canvasSize.height > 0) {
@@ -168,6 +215,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         y: Math.min(startPos.y, currentY),
         width: Math.abs(width),
         height: Math.abs(height),
+        confidence: 1,
       });
 
       if (ctx && imageRef.current) {
@@ -194,6 +242,34 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     }
   };
 
+  const addBoxFromSuggested = (box: Box) => {
+    // Adjust x and y to be the top left corner
+    const adjustedBox = {
+      cls: box.cls,
+      x: box.x - box.width / 2,
+      y: box.y - box.height / 2,
+      width: box.width,
+      height: box.height,
+      confidence: box.confidence || 1,
+    };
+
+    onBoxAdded(adjustedBox);
+  };
+
+  const denyBoxFromSuggested = (box: Box) => {
+    // Adjust x and y to be the top left corner
+    const adjustedBox = {
+      cls: "negative",
+      x: box.x - box.width / 2,
+      y: box.y - box.height / 2,
+      width: box.width,
+      height: box.height,
+      confidence: box.confidence || 1,
+    };
+
+    onBoxAdded(adjustedBox);
+  };
+
   const handleMouseUp = () => {
     if (currentBox && imageRef.current) {
       const imgWidth = imageRef.current.width;
@@ -215,9 +291,10 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
         y: y * scaleY,
         width: Math.abs(currentBox.width) * scaleX,
         height: Math.abs(currentBox.height) * scaleY,
+        confidence: 1,
       };
 
-      onBoxAdded(adjustedBox, imgWidth, imgHeight);
+      onBoxAdded(adjustedBox);
       setCurrentBox(null);
     }
     setIsDrawing(false);
@@ -233,20 +310,20 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[80vw] h-[80vh] max-w-[1200px] max-h-[800px] flex">
-        <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4 py-10">
+      <DialogContent className="w-[90vw] h-[80vh] max-w-[1200px] max-h-[800px] flex py-14">
+        <div className="flex flex-1 gap-2 flex-col flex-wrap basis-1/4">
           <form onSubmit={handleAddClass} className="flex gap-2 pb-4">
-              <Input
-                type="text"
-                value={newClass}
-                onChange={(e) => setNewClass(e.target.value)}
-                placeholder="Add new class"
-                className="w-full"
-                autoFocus
-              />
-              <Button type="submit" variant="outline">
-                Add
-              </Button>
+            <Input
+              type="text"
+              value={newClass}
+              onChange={(e) => setNewClass(e.target.value)}
+              placeholder="Add new class"
+              className="w-full"
+              autoFocus
+            />
+            <Button type="submit" variant="outline">
+              Add
+            </Button>
           </form>
           {classes.map((cls, index) => (
             <Fragment key={cls}>
@@ -265,7 +342,12 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                           classColors[index % classColors.length],
                       }}
                     ></span>
-                    <span className="max-w-32 truncate">{cls}</span>
+                    <span className="max-w-32 truncate">
+                      {cls}{" "}
+                      {boxes.filter((b) => b.cls === cls).length
+                        ? boxes.filter((b) => b.cls === cls).length
+                        : ""}
+                    </span>
                   </Button>
                 </TooltipTrigger>
                 {cls === "negative" && (
@@ -298,15 +380,10 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               onMouseUp={handleMouseUp}
             ></canvas>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-1">
             <Button
               onClick={() => {
-                if (imageRef?.current) {
-                  onPreviousBoxRemoved(
-                    imageRef?.current?.width,
-                    imageRef?.current?.height,
-                  );
-                }
+                onPreviousBoxRemoved();
               }}
               variant="outline"
               disabled={boxes.length === 0}
@@ -315,12 +392,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             </Button>
             <Button
               onClick={() => {
-                if (imageRef?.current) {
-                  onAllBoxesRemoved(
-                    imageRef?.current?.width,
-                    imageRef?.current?.height,
-                  );
-                }
+                onAllBoxesRemoved();
               }}
               variant="destructive"
               disabled={boxes.length === 0}
@@ -329,7 +401,94 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             </Button>
           </div>
         </div>
-        <div className="flex-1 basis-1/4" />
+        <div className="flex-1 basis-1/4 overflow-auto">
+          <h2 className="text-xl font-bold">Predictions</h2>
+          <div className="mb-4">
+            <div
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setShowPredictionsOnly(true)}
+              onMouseLeave={() => setShowPredictionsOnly(false)}
+            >
+              Only show predictions ({sortedSuggestedBoxesWithIndex.length})
+            </div>
+            <div
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setShowApprovedBoxesOnly(true)}
+              onMouseLeave={() => setShowApprovedBoxesOnly(false)}
+            >
+              Only show approved (
+              {boxes.filter((b) => b.cls != "negative").length})
+            </div>
+            <div
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setShowNegativeBoxesOnly(true)}
+              onMouseLeave={() => setShowNegativeBoxesOnly(false)}
+            >
+              Only show negative (
+              {boxes.filter((b) => b.cls == "negative").length})
+            </div>
+          </div>
+
+          {sortedSuggestedBoxesWithIndex.length ? (
+            <span className="pb-2">
+              {sortedSuggestedBoxesWithIndex.length} predictions found
+            </span>
+          ) : null}
+
+          <ul className="flex flex-col">
+            {sortedSuggestedBoxesWithIndex.map((b, i) => {
+              const hovered = hoveredPredictionIndex === b.originalIndex;
+              return (
+                <Fragment key={i}>
+                  <li
+                    className="flex w-full py-2 items-center justify-between shadow-sm hover:shadow-md rounded-lg"
+                    onMouseEnter={() => {
+                      console.log("pred", i, b);
+                      setHoveredPredictionIndex(b.originalIndex);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredPredictionIndex(null);
+                    }}
+                  >
+                    <span className="select-none pl-2">
+                      {i + 1}. {b.cls}
+                    </span>
+                    {hovered && (
+                      <div className="flex gap-2 items-center">
+                        <EyeNoneIcon
+                          // Pop effect
+                          className="h-8 w-8 rounded-full p-1 bg-slate-50 hover:-translate-y-[2px] hover:shadow-md"
+                          onMouseEnter={() => setHideHover(true)}
+                          onMouseLeave={() => setHideHover(false)}
+                        />
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            addBoxFromSuggested(b);
+                          }}
+                        >
+                          <CheckIcon className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            denyBoxFromSuggested(b);
+                          }}
+                        >
+                          <Cross2Icon className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ul>
+        </div>
       </DialogContent>
     </Dialog>
   );

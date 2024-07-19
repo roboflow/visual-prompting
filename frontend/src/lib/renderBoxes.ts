@@ -41,6 +41,7 @@ export function renderBoxes({
     boxes?.forEach((box) => {
       const classIndex = classes.indexOf(box.cls || "");
       ctx.strokeStyle = classColors[classIndex % classColors.length];
+      ctx.lineWidth = 2.5;
       ctx.setLineDash([]);
       ctx.strokeRect(
         box.x * scaleX,
@@ -60,7 +61,7 @@ export function renderBoxes({
 
       const classIndex = classes.indexOf(box.cls || "");
       ctx.strokeStyle = classColors[classIndex % classColors.length];
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = box.highlighted ? 5 : 2.5;
       ctx.setLineDash([2, 2]);
       ctx.strokeRect(x1, y1, scaledWidth, scaledHeight);
     });
