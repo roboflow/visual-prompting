@@ -359,13 +359,13 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                   </Button>
                 </TooltipTrigger>
                 {cls === "negative" && (
-                  <TooltipContent>
+                  <TooltipContent className="z-50">
                     Negative class is used to mark areas that do not contain any
                     of your classes.
                   </TooltipContent>
                 )}
                 {cls === "positive" && (
-                  <TooltipContent>
+                  <TooltipContent className="z-50">
                     Positive class is a default class for testing that will be
                     removed if you add a custom class.
                   </TooltipContent>
