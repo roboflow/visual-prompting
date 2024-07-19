@@ -37,6 +37,7 @@ interface ImageDialogProps {
   onClose: () => void;
   boxes: Box[];
   onBoxAdded: (box: Box) => void;
+  onBoxesAdded: (boxes: Box[]) => void;
   onPreviousBoxRemoved: () => void;
   onAllBoxesRemoved: () => void;
   suggestedBoxes: Box[];
@@ -58,6 +59,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   onClose,
   boxes,
   onBoxAdded,
+  onBoxesAdded,
   onPreviousBoxRemoved,
   onAllBoxesRemoved,
   suggestedBoxes,
@@ -273,6 +275,21 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     onBoxAdded(adjustedBox);
   };
 
+  const addAllSuggestedBoxes = () => {
+    onBoxesAdded(
+      suggestedBoxes.map((box) => {
+        return {
+          cls: box.cls,
+          x: box.x - box.width / 2,
+          y: box.y - box.height / 2,
+          width: box.width,
+          height: box.height,
+          confidence: box.confidence || 1,
+        };
+      }),
+    );
+  };
+
   const denyBoxFromSuggested = (box: Box) => {
     // Adjust x and y to be the top left corner
     const adjustedBox = {
@@ -476,9 +493,15 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
               <span className="pb-2">
                 {sortedSuggestedBoxesWithIndex.length} predictions found
               </span>
-              {/* <Button onClick={} variant="secondary" size="sm">
+              <Button
+                onClick={() => {
+                  addAllSuggestedBoxes();
+                }}
+                variant="secondary"
+                size="sm"
+              >
                 Approve All
-              </Button> */}
+              </Button>
             </div>
           ) : null}
 

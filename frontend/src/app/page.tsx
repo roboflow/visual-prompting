@@ -174,6 +174,18 @@ export default function Home() {
     return trainAndInfer({ boxes: allBoxes, inferImages: [selectedImage] });
   }
 
+  async function onBoxesAdded(boxes: Box[]) {
+    if (!selectedImage) {
+      return;
+    }
+
+    const newBoxes = [...(userBoxesToShow[selectedImage.name] || []), ...boxes];
+    const allBoxes = { ...userBoxesToShow, [selectedImage.name]: newBoxes };
+    setUserBoxes(allBoxes);
+
+    return trainAndInfer({ boxes: allBoxes, inferImages: [selectedImage] });
+  }
+
   const onPreviousBoxRemoved = () => {
     if (!selectedImage) {
       return;
@@ -340,6 +352,7 @@ export default function Home() {
           onClose={handleDialogClose}
           boxes={userBoxesToShow[selectedImage.name] || []}
           onBoxAdded={onBoxAdded}
+          onBoxesAdded={onBoxesAdded}
           onPreviousBoxRemoved={onPreviousBoxRemoved}
           onAllBoxesRemoved={onAllBoxesRemoved}
           suggestedBoxes={suggestedBoxesToShow[selectedImage.name] || []}
