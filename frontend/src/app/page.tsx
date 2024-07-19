@@ -52,11 +52,27 @@ export default function Home() {
   const classesToShow = filterPositive
     ? classes.filter((c) => c !== "positive")
     : classes;
+  const userBoxesToShow = filterPositive
+    ? Object.fromEntries(
+        Object.entries(userBoxes).map(([key, value]) => [
+          key,
+          value.filter((box) => box.cls !== "positive"),
+        ]),
+      )
+    : userBoxes;
+  const suggestedBoxesToShow = filterPositive
+    ? Object.fromEntries(
+        Object.entries(suggestedBoxes).map(([key, value]) => [
+          key,
+          value.filter((box) => box.cls !== "positive"),
+        ]),
+      )
+    : suggestedBoxes;
   const [isInferring, setIsInferring] = useState(false);
 
   async function trainAndInfer(boxes?: typeof userBoxes, inferImages?: File[]) {
     // Train model on all labeled images
-    const labeledImages = Object.entries(boxes || userBoxes).filter(
+    const labeledImages = Object.entries(boxes || userBoxesToShow).filter(
       ([_, boxes]) => boxes.length > 0,
     );
     if (labeledImages.length === 0) return;
@@ -88,7 +104,7 @@ export default function Home() {
     const modelId = trainData.model_id;
 
     // Run inference on all images
-    const newSuggestedBoxes = { ...suggestedBoxes };
+    const newSuggestedBoxes = { ...suggestedBoxesToShow };
     for (const image of inferImages || images) {
       const imageBase64 = await toBase64(image);
       const { width, height } = await getImageDimensions(image);
@@ -127,8 +143,8 @@ export default function Home() {
       return;
     }
 
-    const newBoxes = [...(userBoxes[selectedImage.name] || []), box];
-    const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
+    const newBoxes = [...(userBoxesToShow[selectedImage.name] || []), box];
+    const allBoxes = { ...userBoxesToShow, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
     return trainAndInfer(allBoxes, [selectedImage]);
@@ -139,8 +155,8 @@ export default function Home() {
       return;
     }
 
-    const newBoxes = userBoxes[selectedImage.name].slice(0, -1);
-    const allBoxes = { ...userBoxes, [selectedImage.name]: newBoxes };
+    const newBoxes = userBoxesToShow[selectedImage.name].slice(0, -1);
+    const allBoxes = { ...userBoxesToShow, [selectedImage.name]: newBoxes };
     setUserBoxes(allBoxes);
 
     return trainAndInfer(allBoxes, [selectedImage]);
@@ -151,7 +167,7 @@ export default function Home() {
       return;
     }
 
-    const allBoxes = { ...userBoxes, [selectedImage.name]: [] };
+    const allBoxes = { ...userBoxesToShow, [selectedImage.name]: [] };
     setUserBoxes(allBoxes);
 
     return trainAndInfer(allBoxes, [selectedImage]);
@@ -249,8 +265,8 @@ export default function Home() {
                         }}
                         onImageRemoved={onImageRemoved}
                         filterPositive={filterPositive}
-                        boxes={userBoxes}
-                        suggestedBoxes={suggestedBoxes}
+                        boxes={userBoxesToShow}
+                        suggestedBoxes={suggestedBoxesToShow}
                       />
                     </div>
                     <input
@@ -297,13 +313,11 @@ export default function Home() {
           imageFile={selectedImage}
           isOpen={isDialogOpen}
           onClose={handleDialogClose}
-          boxes={(userBoxes[selectedImage.name] || []).filter((box) =>
-            filterPositive ? box.cls !== "positive" : true,
-          )}
+          boxes={userBoxesToShow[selectedImage.name] || []}
           onBoxAdded={onBoxAdded}
           onPreviousBoxRemoved={onPreviousBoxRemoved}
           onAllBoxesRemoved={onAllBoxesRemoved}
-          suggestedBoxes={suggestedBoxes[selectedImage.name] || []}
+          suggestedBoxes={suggestedBoxesToShow[selectedImage.name] || []}
         />
       )}
     </div>

@@ -67,8 +67,9 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     number | null
   >();
   const [hideHover, setHideHover] = useState(false);
-  const [hideUserBoxes, setHideUserBoxes] = useState(false);
-  const [hidePredictionBoxes, setHidePredictionBoxes] = useState(false);
+  const [showPredictionsOnly, setShowPredictionsOnly] = useState(false);
+  const [showApprovedBoxesOnly, setShowApprovedBoxesOnly] = useState(false);
+  const [showNegativeBoxesOnly, setShowNegativeBoxesOnly] = useState(false);
 
   useEffect(() => {
     if (!classes.includes(currentClass)) {
@@ -92,16 +93,23 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     }
   }, [containerSize]);
 
-  const renderBoxesCb = useCallback(
-    () =>
-      renderBoxes({
-        canvas: canvasRef.current,
-        image: imageRef.current,
-        boxes:
-          typeof hoveredPredictionIndex == "number" || hideUserBoxes
-            ? []
-            : boxes,
-        suggestedBoxes: hidePredictionBoxes
+  const renderBoxesCb = useCallback(() => {
+    let userBoxesToShow = boxes;
+    if (typeof hoveredPredictionIndex == "number" || showPredictionsOnly) {
+      userBoxesToShow = [];
+    }
+    if (showApprovedBoxesOnly) {
+      userBoxesToShow = boxes.filter((b) => b.cls != "negative");
+    }
+    if (showNegativeBoxesOnly) {
+      userBoxesToShow = boxes.filter((b) => b.cls == "negative");
+    }
+    renderBoxes({
+      canvas: canvasRef.current,
+      image: imageRef.current,
+      boxes: userBoxesToShow,
+      suggestedBoxes:
+        showApprovedBoxesOnly || showNegativeBoxesOnly
           ? []
           : suggestedBoxes
               .map((box) => {
@@ -118,20 +126,20 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                   !(typeof hoveredPredictionIndex == "number") ||
                   box.highlighted,
               ),
-        classes,
-      }),
-    [
-      canvasRef,
-      boxes,
-      imageRef,
-      suggestedBoxes,
       classes,
-      hoveredPredictionIndex,
-      hideHover,
-      hideUserBoxes,
-      hidePredictionBoxes,
-    ],
-  );
+    });
+  }, [
+    canvasRef,
+    boxes,
+    imageRef,
+    suggestedBoxes,
+    classes,
+    hoveredPredictionIndex,
+    hideHover,
+    showPredictionsOnly,
+    showApprovedBoxesOnly,
+    showNegativeBoxesOnly,
+  ]);
 
   useEffect(() => {
     if (canvasSize.width > 0 && canvasSize.height > 0) {
@@ -334,7 +342,12 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                           classColors[index % classColors.length],
                       }}
                     ></span>
-                    <span className="max-w-32 truncate">{cls}</span>
+                    <span className="max-w-32 truncate">
+                      {cls}{" "}
+                      {boxes.filter((b) => b.cls === cls).length
+                        ? boxes.filter((b) => b.cls === cls).length
+                        : ""}
+                    </span>
                   </Button>
                 </TooltipTrigger>
                 {cls === "negative" && (
@@ -393,19 +406,35 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           <div className="mb-4">
             <div
               className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
-              onMouseEnter={() => setHideUserBoxes(true)}
-              onMouseLeave={() => setHideUserBoxes(false)}
+              onMouseEnter={() => setShowPredictionsOnly(true)}
+              onMouseLeave={() => setShowPredictionsOnly(false)}
             >
-              Only show predictions
+              Only show predictions ({sortedSuggestedBoxesWithIndex.length})
             </div>
             <div
               className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
-              onMouseEnter={() => setHidePredictionBoxes(true)}
-              onMouseLeave={() => setHidePredictionBoxes(false)}
+              onMouseEnter={() => setShowApprovedBoxesOnly(true)}
+              onMouseLeave={() => setShowApprovedBoxesOnly(false)}
             >
-              Only show approved
+              Only show approved (
+              {boxes.filter((b) => b.cls != "negative").length})
+            </div>
+            <div
+              className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
+              onMouseEnter={() => setShowNegativeBoxesOnly(true)}
+              onMouseLeave={() => setShowNegativeBoxesOnly(false)}
+            >
+              Only show negative (
+              {boxes.filter((b) => b.cls == "negative").length})
             </div>
           </div>
+
+          {sortedSuggestedBoxesWithIndex.length ? (
+            <span className="pb-2">
+              {sortedSuggestedBoxesWithIndex.length} predictions found
+            </span>
+          ) : null}
+
           <ul className="flex flex-col">
             {sortedSuggestedBoxesWithIndex.map((b, i) => {
               const hovered = hoveredPredictionIndex === b.originalIndex;
@@ -421,7 +450,9 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                       setHoveredPredictionIndex(null);
                     }}
                   >
-                    <span className="select-none pl-2">{b.cls}</span>
+                    <span className="select-none pl-2">
+                      {i + 1}. {b.cls}
+                    </span>
                     {hovered && (
                       <div className="flex gap-2 items-center">
                         <EyeNoneIcon
