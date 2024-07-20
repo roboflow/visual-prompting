@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   useState,
   useEffect,
@@ -11,8 +13,11 @@ import { Dialog, DialogContent } from "./ui/dialog";
 import { Input } from "./ui/input"; // Add this import
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import * as Slider from "@radix-ui/react-slider";
 import { renderBoxes } from "@/lib/renderBoxes";
 import { EyeNoneIcon, CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { CONFIDENCE_LEVELS } from "@/lib/constants";
+import { Spinner } from "./ui/spinner";
 
 export const classColors = [
   "red",
@@ -32,9 +37,18 @@ interface ImageDialogProps {
   onClose: () => void;
   boxes: Box[];
   onBoxAdded: (box: Box) => void;
+  onBoxesAdded: (boxes: Box[]) => void;
   onPreviousBoxRemoved: () => void;
   onAllBoxesRemoved: () => void;
   suggestedBoxes: Box[];
+  confidenceLevel: number;
+  setConfidenceLevel: React.Dispatch<React.SetStateAction<number>>;
+  trainAndInfer: ({
+    newConfidenceLevel,
+  }: {
+    newConfidenceLevel?: number;
+  }) => void;
+  isInferring: boolean;
 }
 
 const ImageDialog: React.FC<ImageDialogProps> = ({
@@ -45,9 +59,14 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
   onClose,
   boxes,
   onBoxAdded,
+  onBoxesAdded,
   onPreviousBoxRemoved,
   onAllBoxesRemoved,
   suggestedBoxes,
+  confidenceLevel,
+  setConfidenceLevel,
+  trainAndInfer,
+  isInferring,
 }) => {
   const [imageUrl, setImageUrl] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -256,6 +275,21 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     onBoxAdded(adjustedBox);
   };
 
+  const addAllSuggestedBoxes = () => {
+    onBoxesAdded(
+      suggestedBoxes.map((box) => {
+        return {
+          cls: box.cls,
+          x: box.x - box.width / 2,
+          y: box.y - box.height / 2,
+          width: box.width,
+          height: box.height,
+          confidence: box.confidence || 1,
+        };
+      }),
+    );
+  };
+
   const denyBoxFromSuggested = (box: Box) => {
     // Adjust x and y to be the top left corner
     const adjustedBox = {
@@ -328,7 +362,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           {classes.map((cls, index) => (
             <Fragment key={cls}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button
                     key={cls}
                     variant={currentClass === cls ? "default" : "outline"}
@@ -351,13 +385,13 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                   </Button>
                 </TooltipTrigger>
                 {cls === "negative" && (
-                  <TooltipContent>
+                  <TooltipContent className="z-50">
                     Negative class is used to mark areas that do not contain any
                     of your classes.
                   </TooltipContent>
                 )}
                 {cls === "positive" && (
-                  <TooltipContent>
+                  <TooltipContent className="z-50">
                     Positive class is a default class for testing that will be
                     removed if you add a custom class.
                   </TooltipContent>
@@ -367,7 +401,28 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           ))}
           <div className="flex-1" />
         </div>
-        <div className="flex-2 flex flex-col justify-center w-full mt-5 basis-1/2">
+        <div className="flex-2 flex flex-col justify-center w-full gap-3 basis-1/2">
+          <div className="flex justify-center w-full items-center gap-2 flex-col">
+            <span>Confidence Level</span>
+            <Slider.Root
+              className="flex h-4 w-48 relative items-center"
+              defaultValue={[confidenceLevel]}
+              max={Object.keys(CONFIDENCE_LEVELS).length - 1}
+              step={1}
+              onValueChange={(value) => {
+                setConfidenceLevel(value[0]);
+                trainAndInfer({ newConfidenceLevel: value[0] });
+              }}
+            >
+              <Slider.Track className="bg-secondary h-1 w-full rounded-full relative">
+                <Slider.Range className="absolute rounded-full h-full bg-primary" />
+              </Slider.Track>
+              <Slider.Thumb
+                className="block w-4 h-4 bg-primary rounded-full"
+                aria-label="Confidence Level"
+              />
+            </Slider.Root>
+          </div>
           <div ref={containerRef} className="w-full flex-1 flex items-center">
             <canvas
               ref={canvasRef}
@@ -402,7 +457,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           </div>
         </div>
         <div className="flex-1 basis-1/4 overflow-auto">
-          <h2 className="text-xl font-bold">Predictions</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold">Predictions</h2>
+            {/* Loading Spinner */}
+            {isInferring && <Spinner className="w-6 h-6" />}
+          </div>
           <div className="mb-4">
             <div
               className="flex w-full select-none pl-2 py-2 gap-2 items-center shadow-sm hover:-translate-y-1 hover:shadow-md rounded-lg"
@@ -430,9 +489,20 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
           </div>
 
           {sortedSuggestedBoxesWithIndex.length ? (
-            <span className="pb-2">
-              {sortedSuggestedBoxesWithIndex.length} predictions found
-            </span>
+            <div className="flex flex-col">
+              <span className="pb-2">
+                {sortedSuggestedBoxesWithIndex.length} predictions found
+              </span>
+              <Button
+                onClick={() => {
+                  addAllSuggestedBoxes();
+                }}
+                variant="secondary"
+                size="sm"
+              >
+                Approve All
+              </Button>
+            </div>
           ) : null}
 
           <ul className="flex flex-col">
