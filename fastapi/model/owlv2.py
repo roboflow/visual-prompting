@@ -16,12 +16,29 @@ def to_corners(box):
     y2 = cy + h / 2
     return torch.stack([x1, y1, x2, y2], dim=-1)
 
+from collections import OrderedDict
+
+class LimitedSizeDict(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
+
 
 class OwlVitWrapper:
     def __init__(self, owl_name: str="google/owlv2-base-patch16-ensemble"):
         self.processor = Owlv2Processor.from_pretrained(owl_name)
         self.model = Owlv2ForObjectDetection.from_pretrained(owl_name).eval().cuda()
-        self.image_embed_cache = dict()  # NOTE: this should have a max size
+        self.image_embed_cache = LimitedSizeDict(size_limit=20)  # NOTE: this should have a max size
 
     @torch.no_grad()
     def embed_image(self, image: Image.Image) -> "Hash":
